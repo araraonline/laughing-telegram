@@ -17,3 +17,6 @@ data/raw/loteca.htm:
 
 data/interim/loteca_df.pkl data/interim/loteca_cities.pkl: data/raw/loteca.htm
 	python loteca/data/processing/extract_loteca.py data/raw/loteca.htm data/interim/loteca_df.pkl data/interim/loteca_cities.pkl
+
+data/raw/loteca_rounds.pkl: data/interim/loteca_df.pkl
+	python loteca/data/collecting/collect_loteca.py $< $@
