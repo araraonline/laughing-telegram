@@ -26,3 +26,6 @@ data/interim/loteca_site_rounds.pkl data/interim/loteca_site_games.pkl data/inte
 
 data/interim/loteca_rounds.pkl: data/interim/loteca_file_df.pkl data/interim/loteca_site_rounds.pkl
 	python loteca/data/merging/loteca_file-loteca_site.py data/interim/loteca_file_df.pkl data/interim/loteca_site_rounds.pkl data/interim/loteca_rounds.pkl
+
+data/processed/loteca_rounds.pkl: data/interim/loteca_rounds.pkl
+	python loteca/data/processing/process_loteca_rounds.py $< $@
