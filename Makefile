@@ -15,8 +15,8 @@ data/raw/loteca.htm:
 	rm data/raw/d_loteca.zip data/raw/LOTECA.GIF
 	mv data/raw/D_LOTECA.HTM data/raw/loteca.htm
 
-data/interim/loteca_file_df.pkl data/interim/loteca_cities.pkl: data/raw/loteca.htm
-	python loteca/data/processing/extract_loteca_file.py data/raw/loteca.htm data/interim/loteca_file_df.pkl data/interim/loteca_cities.pkl
+data/interim/loteca_file_df.pkl data/interim/loteca_file_cities.pkl: data/raw/loteca.htm
+	python loteca/data/processing/extract_loteca_file.py data/raw/loteca.htm data/interim/loteca_file_df.pkl data/interim/loteca_file_cities.pkl
 
-data/raw/loteca_rounds.pkl: data/interim/loteca_file_df.pkl
+data/raw/loteca_site_json.pkl: data/interim/loteca_file_df.pkl
 	python loteca/data/collecting/collect_loteca_site.py $< $@
