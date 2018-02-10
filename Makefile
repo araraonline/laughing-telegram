@@ -20,3 +20,6 @@ data/interim/loteca_file_df.pkl data/interim/loteca_file_cities.pkl: data/raw/lo
 
 data/raw/loteca_site_json.pkl: data/interim/loteca_file_df.pkl
 	python loteca/data/collecting/collect_loteca_site.py $< $@
+
+data/interim/loteca_site_rounds.pkl data/interim/loteca_site_games.pkl data/interim/loteca_site_cities.pkl: data/raw/loteca_site_json.pkl
+	python loteca/data/processing/extract_loteca_site.py $< data/interim/loteca_site_rounds.pkl data/interim/loteca_site_games.pkl data/interim/loteca_site_cities.pkl
