@@ -10,28 +10,47 @@ QUERY_URL = r'http://loterias.caixa.gov.br/wps/portal/!ut/p/a1/04_Sj9CPykssy0xPL
 @click.argument('output_filename', type=click.Path(writable=True))
 def collect_loteca_rounds(loteca_table_loc, output_filename):
     """This will collect all the important data from the rounds
-    in the loteca site. The number for the last round is retrieved 
-    from the loteca_file DataFrame.
+    in the loteca site.
+    
+    It will try not to download rounds that have already been downloaded
+    and only retrieve rounds until the last one that is found in the
+    loteca_file_rounds.pkl file.
 
-    Output file must be a .pkl
+    Output must be a .pkl
     """
 
+    # determine first round
+    try:
+        with open(output_filename, mode='rb') as fp:
+            rounds = pickle.load(fp)
+    except FileNotFoundError:
+        first_round = 1
+    else:
+        first_round = max([r['concurso'] for r in rounds]) + 1
+
+    # determine last round
     with open(loteca_table_loc, mode='rb') as fp:
         df = pickle.load(fp)
     last_round = df.index[-1]
-    click.echo("There are %s rounds to collect" % last_round)
 
+    # stop if up-to-date
+    nrounds = last_round - first_round + 1
+    if nrounds == 0:
+        click.echo("All rounds are up-to-date!")
+        return
+
+    # collect rounds
+    click.echo("There are {} rounds to collect ({} to {})".format(nrounds, first_round, last_round))
     rounds = []
-    for roundno in range(1, last_round + 1):
+    for roundno in range(first_round, last_round + 1):
         click.echo("Retrieving round {}".format(roundno))
         response = requests.get(QUERY_URL.format(roundno))
         round = response.json()
         rounds.append(round)
     
-    click.echo("Saving rounds...")
+    # save rounds
     with open(output_filename, mode='wb') as fp:
         pickle.dump(rounds, fp)
-
     click.echo("Done!")
 
 if __name__ == '__main__':
