@@ -94,6 +94,7 @@ def collect_matches():
         SELECT category, name, year, url
         FROM leagues
         WHERE (scraped == 0) OR (scraped == 1 AND complete == 0)
+        ORDER BY year ASC
     ;""")
     leagues = cursor.fetchall()
 
