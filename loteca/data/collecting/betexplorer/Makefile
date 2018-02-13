@@ -1,4 +1,4 @@
-leagues_start_year = 2010
+leagues_start_year = 2009
 
 collect_leagues: collect_leagues.py 
 	python collect_leagues.py world --start-year $(leagues_start_year)
