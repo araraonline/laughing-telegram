@@ -30,5 +30,10 @@ data/interim/loteca_rounds.pkl: loteca/data/merging/merge_loteca_rounds.py data/
 data/processed/loteca_rounds.pkl: loteca/data/processing/process_loteca_rounds.py data/interim/loteca_rounds.pkl
 	python $< $(word 2,$^) $@
 
-.PHONY: all clean FORCE
+# crawlers
+collect_betexplorer_matches:
+	cd loteca/data/collecting/betexplorer/ && $(MAKE) collect_matches
+
+
+.PHONY: all clean FORCE collect_betexplorer_matches
 FORCE:
