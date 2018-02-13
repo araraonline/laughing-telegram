@@ -13,6 +13,19 @@ def save_leagues_to_db(db_loc, leagues):
     conn.commit()
     conn.close()
 
+def retrieve_leagues_from_db(db_loc):
+    conn = sqlite3.connect(db_loc)
+    c = conn.cursor()
+    c.execute("SELECT * FROM leagues")
+    results = c.fetchall()
+    conn.close()
+
+    return [{'category': l[0],
+                'name': l[1],
+                'year': l[2],
+                'url': l[3],
+                'scraped': l[4],
+                'complete': l[5]} for l in results]
 
 @click.group()
 def group():
