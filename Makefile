@@ -33,6 +33,7 @@ data/processed/loteca_rounds.pkl: loteca/data/processing/process_loteca_rounds.p
 # crawlers
 collect_betexplorer_matches:
 	cd loteca/data/collecting/betexplorer/ && $(MAKE) collect_matches
+	cp loteca/data/collecting/betexplorer/db.sqlite3 data/raw/betexplorer.sqlite3
 
 
 .PHONY: all clean FORCE collect_betexplorer_matches
