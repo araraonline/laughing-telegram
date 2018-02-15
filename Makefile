@@ -35,6 +35,11 @@ collect_betexplorer_matches:
 	cd loteca/data/collecting/betexplorer/ && $(MAKE) collect_matches
 	cp loteca/data/collecting/betexplorer/db.sqlite3 data/raw/betexplorer.sqlite3
 
+download_countries_list:
+	wget -O "data/external/countries_pt.json" "https://raw.githubusercontent.com/umpirsky/country-list/master/data/pt_BR/country.json"
+	wget -O "data/external/countries_en.json" "https://raw.githubusercontent.com/umpirsky/country-list/master/data/en/country.json"
 
-.PHONY: all clean FORCE collect_betexplorer_matches
+
+.PHONY: all clean FORCE \
+	collect_betexplorer_matches retrieve_countries_list
 FORCE:
