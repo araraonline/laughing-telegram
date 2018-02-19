@@ -25,6 +25,7 @@ def collect_loteca_rounds(loteca_table_loc, output_filename):
             rounds = pickle.load(fp)
     except FileNotFoundError:
         first_round = 1
+        rounds = []
     else:
         first_round = max([r['concurso'] for r in rounds]) + 1
 
@@ -41,7 +42,6 @@ def collect_loteca_rounds(loteca_table_loc, output_filename):
 
     # collect rounds
     click.echo("There are {} rounds to collect ({} to {})".format(nrounds, first_round, last_round))
-    rounds = []
     for roundno in range(first_round, last_round + 1):
         click.echo("Retrieving round {}".format(roundno))
         response = requests.get(QUERY_URL.format(roundno))
