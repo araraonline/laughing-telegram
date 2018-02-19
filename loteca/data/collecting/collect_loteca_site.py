@@ -1,7 +1,17 @@
+import click
 import pickle
 import requests
-import click
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 
+
+def requests_retry_session(**retry_kwargs):
+    session = requests.Session()
+    retry = Retry(**retry_kwargs)
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    return session
 
 QUERY_URL = r'http://loterias.caixa.gov.br/wps/portal/!ut/p/a1/04_Sj9CPykssy0xPLMnMz0vMAfGjzOLNDH0MPAzcDbz8vTxNDRy9_Y2NQ13CDA3cDYEKIoEKnN0dPUzMfQwMDEwsjAw8XZw8XMwtfQ0MPM2I02-AAzgaENIfrh-FqsQ9wBmoxN_FydLAGAgNTKEK8DkRrACPGwpyQyMMMj0VAbNnwlU!/dl5/d5/L2dBISEvZ0FBIS9nQSEh/pw/Z7_HGK818G0KOCO10AFFGUTGU0004/res/id=buscaResultado/c=cacheLevelPage/=/?timestampAjax=1518194221050&concurso={}'
 
@@ -44,7 +54,8 @@ def collect_loteca_rounds(loteca_table_loc, output_filename):
     click.echo("There are {} rounds to collect ({} to {})".format(nrounds, first_round, last_round))
     for roundno in range(first_round, last_round + 1):
         click.echo("Retrieving round {}".format(roundno))
-        response = requests.get(QUERY_URL.format(roundno))
+        session = requests_retry_session(connect=10, read=3, redirect=5, backoff_factor=0.3)
+        response = session.get(QUERY_URL.format(roundno))
         round = response.json()
         rounds.append(round)
     
