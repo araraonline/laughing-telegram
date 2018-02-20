@@ -65,7 +65,7 @@ data/external/countries_pt.json data/external/countries_en.json:
 	@echo
 
 # Generate countries dictionary (based on above)
-data/interim/countries_dict.pkl: loteca/data/processing/teams/countries_dict.py data/external/countries_en.json data/external/countries_pt.json
+data/interim/countries_dict.pkl: loteca/data/merging/teams/countries_dict.py data/external/countries_en.json data/external/countries_pt.json
 	@echo Generating countries dictionary...
 	@python $< $(word 2,$^) $(word 3,$^) $@
 
