@@ -64,6 +64,23 @@ data/external/countries_pt.json data/external/countries_en.json:
 	@echo Done!
 	@echo
 
+# Generate countries dictionary (based on above)
+data/interim/countries_dict.pkl: loteca/data/processing/teams/countries_dict.py data/external/countries_en.json data/external/countries_pt.json
+	@echo Generating countries dictionary...
+	@python $< $(word 2,$^) $(word 3,$^) $@
+
+# Generate first Loteca to BetExplorer teams dictionary
+loteca/data/merging/teams/loteca_betexp_dict.py: loteca/data/merging/teams/betexplorer.py loteca/data/merging/teams/loteca.py loteca/data/merging/teams/commons.py 
+data/interim/loteca_to_betexp_teams1.pkl: loteca/data/merging/teams/loteca_betexp_dict.py data/interim/loteca_site_games.pkl data/raw/betexplorer.sqlite3 data/interim/countries_dict.pkl
+	@echo Generating Loteca to BetExplorer teams dictionary...
+	@python -m loteca.data.merging.teams.loteca_betexp_dict --start-round 366 $(word 2,$^) $(word 3,$^) $(word 4,$^) $@
+
+# Generate reports
+reports: FORCE
+	@echo Generating reports
+	@mkdir -p reports
+	@jupyter nbconvert notebooks/00-ala-explore-team-names.ipynb --to html --output-dir reports
+
 
 .PHONY: all clean FORCE
 FORCE:

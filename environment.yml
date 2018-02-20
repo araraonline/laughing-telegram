@@ -1,7 +1,7 @@
 name: loteca
 channels:
-  - defaults
   - conda-forge
+  - defaults
 dependencies:
   - jupyter_contrib_core=0.3.3=py36_1
   - jupyter_contrib_nbextensions=0.4.0=py36_0
@@ -114,6 +114,7 @@ dependencies:
   - zlib=1.2.11=ha838bed_2
   - pip:
     - autokey-py3==0.93.6
+    - click-log==0.2.1
     - unidecode==1.0.22
 prefix: /home/andre/anaconda3/envs/loteca
 
