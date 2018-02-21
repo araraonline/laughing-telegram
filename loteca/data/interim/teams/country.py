@@ -1,5 +1,4 @@
 import json
-import pickle
 
 import click
 from unidecode import unidecode
@@ -37,38 +36,25 @@ def get_country_translations(loc1, loc2):
 def standardize(country):
     return unidecode(country).lower()
 
+def make_translations(in_countries_en, in_countries_ptbr):
+    """Generate dictionary to translate Loteca to BetExplorer country names
 
-@click.command()
-@click.argument('in-en-dictionary', type=click.Path(exists=True))
-@click.argument('in-pt-dictionary', type=click.Path(exists=True))
-@click.argument('out-countries-dict', type=click.Path(writable=True))
-def generate_countries_dict(in_en_dictionary, in_pt_dictionary, out_countries_dict):
-    """Generates a dictionary that will map brazilian country names into english
-    country names. This is made to be used in converting Loteca team names into
-    BetExplorer team names, so, it is pretty specific.
-
-    The inputs are json files downloaded from this repository:
-    https://github.com/umpirsky/country-list
-
-    \b
-    The resulting dictionary will be of the form: 
-        LOTECA_FNAME -> BETEXPLORER_FNAME
-
-    \b
-    LOTECA_FNAME and BETEXPLORER_FNAME refers to the formatted (standardized)
-    name of the countries as present in loteca and betexplorer matches,
-    respectively.
-
-    \b
     Args:
-        in_en_dictionary: the location of the english .json input dictionary
-        in_pt_dictionary: the location of the pt_BR .json input dictionary
-        out_countries_dict: the output location where our dict will be saved
+        in_countries_en: the location of the english dictionary (json)
+        en_countries_ptbr: the location of the ptbr dictionary (json)'
 
-    The output format is .pkl
+    Note:
+        Both dictionaries should be downloaded from the following repository:
+        https://github.com/umpirsky/country-list
+
+    Returns:
+        A dict (Loteca country fname -> BetExplorer country fname) for
+        converting between names of country teams. All the keys and values are
+        standardized, so make sure to use the formatted name instead of the raw
+        name.
     """
     # generate dictionary
-    translations = get_country_translations(in_pt_dictionary, in_en_dictionary)
+    translations = get_country_translations(in_countries_ptbr, in_countries_en)
 
     # standardize format
     translations = {standardize(k): standardize(v) for k, v in translations.items()}
@@ -88,12 +74,4 @@ def generate_countries_dict(in_en_dictionary, in_pt_dictionary, out_countries_di
     d['servia e montenegro'] = 'serbia and montenegro'
     d['taiti'] = 'tahiti'
 
-    # save
-    with open(out_countries_dict, mode='wb') as fp:
-        pickle.dump(d, fp)
-
-    return 0
-
-
-if __name__ == '__main__':
-    generate_countries_dict()
+    return d

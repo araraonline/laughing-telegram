@@ -1,0 +1,48 @@
+As this directory is a bit complex, I will try to summarize what happened here.
+
+The objective of this code is to create a dictionary that links Loteca team
+names into BetExplorer team names. This will later facilitate the process of
+linking the matches from Loteca into the matches from BetExplorer.
+
+We took a conservative approach, only making two teams equals if:
+
+1. They are country teams and the translations match. This was made by hand (and
+     there's not much data), so, we can be sure that there were no errors.
+
+2. They are international teams (not from brazil) and their names match exactly.
+     There might be some errors here
+
+3. They are brazilian teams and their states and names match exactly. I think it
+     will be quite hard for a name and state to match wrongly at the same time,
+     so this approach is quite robust.
+
+During the process of extracting the names, we gave the following denominations
+to the stages of processing the string:
+
+- string: raw name of the team, as you'd expect to find in the BetExplorer site
+    or in the BetExplorer site. The tokens are present here. Examples:
+    'ATLÉTICO/MG JÚNIOR' (Loteca) or 'Atletico-MG U20' (BetExplorer).
+
+- name: raw name of the team, but, without the tokens. Examples: 'ATLÉTICO'
+    (Loteca) or 'Atletico-MG' (BetExplorer). Notice that the BetExplorer state
+    makes part of the team name, and couldn't be extracted as a token.
+
+- fname (formatted name): 'name' after it's gone through some processing. This
+    is done before matching names from different sources (we just compare
+    'fnames', not 'names'. Examples: 'atletico' (Loteca) or 'atletico-mg'
+    (BetExplorer).
+
+We also created some objects that were useful in storing and manipulating team
+information:
+
+- Team
+
+A tuple consisting of 'fname', 'name', 'string' and 'tokens', where tokens is
+an instance of the class below.
+
+- Tokens
+
+A tuple consisting of ['state', 'country', 'am', 'under', 'women']. All these
+tokens are extracted from the team 'string'. State and country are strings.
+Under is an integer. Am and women are boolean. More information is present in
+the file Loteca/data/interim/teams/Loteca.py

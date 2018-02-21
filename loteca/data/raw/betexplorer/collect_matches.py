@@ -1,8 +1,17 @@
+import logging
 import sqlite3
+import sys
+
 import click
-import requests
+import click_log
 import parsel
 
+sys.path.append('../../../..')
+from loteca.data.raw.util import requests_retry_session
+
+
+logger = logging.getLogger()
+click_log.basic_config(logger)
 
 def create_table(cursor):
     cursor.execute("""
@@ -65,22 +74,25 @@ def retrieve_other_urls(response, base_url):
 # Direct interface with main function
 
 def check_complete(url):
-    response = requests.get(url)
+    session = requests_retry_session(total=10, backoff_factor=0.3)
+    response = session.get(url)
     return 'No upcoming matches to be played.' in response.text
 
 def save_all_matches(category, name, year, base_url, cursor):
+    session = requests_retry_session(total=10, backoff_factor=0.3)
     url = base_url + 'results/'
-    response = requests.get(url)
+    response = session.get(url)
     save_matches(cursor, response, category, name, year)
 
     for url in retrieve_other_urls(response, url):
-        response = requests.get(url)
+        response = session.get(url)
         save_matches(cursor, response, category, name, year)
     
 
 # CLI
 
 @click.command()
+@click_log.simple_verbosity_option(logger, default='INFO')
 def collect_matches():
     # connect to database
     conn = sqlite3.connect('db.sqlite3')
@@ -100,7 +112,7 @@ def collect_matches():
 
     # iterate over leagues and save matches
     for category, name, year, url in leagues:
-        click.echo("Collecting matches from {}".format(url))
+        logger.info("Collecting matches from %s" % url)
         complete = check_complete(url)
         save_all_matches(category, name, year, url, cursor)
         cursor.execute("""

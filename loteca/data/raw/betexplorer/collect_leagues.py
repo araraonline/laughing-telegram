@@ -1,9 +1,13 @@
-import sqlite3
 import re
+import sqlite3
+import sys
 from urllib.parse import urlparse
+
 import click
-import requests
 import parsel
+
+sys.path.append('../../../..')
+from loteca.data.raw.util import requests_retry_session
 
 
 def create_table(cursor):
@@ -65,7 +69,8 @@ def scrap_leagues(category, start_year):
     create_table(cursor)
 
     # retrieve and save leagues
-    response = requests.get(url)
+    session = requests_retry_session(total=10, backoff_factor=0.3)
+    response = session.get(url)
     selector = parsel.Selector(response.text)
 
     for yearly_list in selector.css('tbody'):

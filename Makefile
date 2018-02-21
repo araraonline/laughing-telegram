@@ -1,86 +1,145 @@
 dummy:
 	# this will do nothing
 
+.PHONY: clean
 clean:
-	rm -f data/raw/*
+	rm -f data/external/*
 	rm -f data/interim/*
-	rm -f data/processed/*
+	rm -f data/pre/*
+	rm -f data/process/*
+	rm -f data/raw/*
+
+.PHONY: clean-cache
+clean-cache:
+	find -type d -name __pycache__ -prune -exec rm -r {} \;
 
 
-# Download loteca file
-data/raw/d_loteca.zip: FORCE
-	@echo Downloading loteca file...
+
+# Loteca file
+
+### Download and extract loteca file
+data/raw/d_loteca.zip:
+	@echo Download loteca file
 	@wget -nv -N --no-if-modified-since -P "data/raw/" "http://www1.caixa.gov.br/loterias/_arquivos/loterias/d_loteca.zip"
-	@echo Done!
-	@echo
 
-# Unzip loteca file
-data/raw/loteca_file.htm: data/raw/d_loteca.zip
-	@echo Unzipping loteca file...
+data/raw/loteca.htm: data/raw/d_loteca.zip
+	@echo Extract loteca file
 	@unzip -DD -d data/raw/ data/raw/d_loteca.zip
 	@rm data/raw/LOTECA.GIF
-	@mv data/raw/D_LOTECA.HTM data/raw/loteca_file.htm
-	@echo
+	@mv data/raw/D_LOTECA.HTM data/raw/loteca.htm
 
-# Extract loteca file
-data/interim/loteca_file_rounds.pkl data/interim/loteca_file_cities.pkl: loteca/data/processing/extract_loteca_file.py data/raw/loteca_file.htm
-	@echo Extracting data from loteca file...
-	@python $< $(word 2,$^) data/interim/loteca_file_rounds.pkl data/interim/loteca_file_cities.pkl
+### Preprocess loteca file
+data/pre/lotecaf_rounds.pkl: loteca/data/pre/loteca_file.py \
+				data/raw/loteca.htm
+	@echo Preprocess loteca file
+	@python -m loteca.data.pre.loteca_file $(word 2,$^) $@
 
-# Collect data from loteca site
-data/raw/loteca_site.pkl: loteca/data/collecting/collect_loteca_site.py data/interim/loteca_file_rounds.pkl
-	@echo Collecting data from loteca site...
-	@python $< $(word 2,$^) $@
-	@echo
+### Process loteca file rounds
+data/process/lotecaf_rounds.pkl: loteca/data/process/lotecaf_rounds.py \
+					data/pre/lotecaf_rounds.pkl
+	@echo Process loteca file rounds
+	@python -m loteca.data.process.lotecaf_rounds $(word 2,$^) $@
 
-# Process data from loteca site
-data/interim/loteca_site_rounds.pkl data/interim/loteca_site_games.pkl data/interim/loteca_site_cities.pkl: loteca/data/processing/extract_loteca_site.py data/raw/loteca_site.pkl
-	@echo Processing data from loteca site...
-	@python $< $(word 2,$^) data/interim/loteca_site_rounds.pkl data/interim/loteca_site_games.pkl data/interim/loteca_site_cities.pkl
 
-# Merge rounds from loteca site and file 
-data/interim/loteca_rounds.pkl: loteca/data/merging/merge_loteca_rounds.py data/interim/loteca_file_rounds.pkl data/interim/loteca_site_rounds.pkl
-	@echo Merging rounds from loteca site and file...
-	@python $< $(word 2,$^) $(word 3,$^) $@
 
-# Calculate prizes for loteca rounds
-data/processed/loteca_rounds.pkl: loteca/data/processing/process_loteca_rounds.py data/interim/loteca_rounds.pkl
-	@echo Calculating prizes for loteca rounds...
-	@python $< $(word 2,$^) $@
+# Loteca site
 
-# Collect BetExplorer matches
-data/raw/betexplorer.sqlite3: FORCE
-	@echo Collecting BetExplorer matches...
-	@cd loteca/data/collecting/betexplorer/ && $(MAKE) collect_matches
-	@cp loteca/data/collecting/betexplorer/db.sqlite3 data/raw/betexplorer.sqlite3
-	@echo Done!
-	@echo
+### Collect data from loteca site
+data/raw/loteca_site.pkl: loteca/data/raw/loteca_site.py
+	@echo Collect data from loteca site
+	@python -m loteca.data.raw.loteca_site $@
 
-# Download list of countries (for team merging)
+### Preprocess loteca site
+data/pre/lotecas_matches.pkl: loteca/data/pre/loteca_site.py \
+				data/raw/loteca_site.pkl
+	@echo Preprocess loteca site
+	@python -m loteca.data.pre.loteca_site $(word 2,$^) $@
+
+
+
+# BetExplorer
+
+### Collect BetExplorer matches
+data/raw/betexplorer.sqlite3:
+	@echo Collect BetExplorer matches
+	@cd loteca/data/raw/betexplorer/ && $(MAKE) collect-matches
+	@cp loteca/data/raw/betexplorer/db.sqlite3 data/raw/betexplorer.sqlite3
+
+
+
+# Loteca to BetExplorer
+
+### Download list of countries (for team merging)
 data/external/countries_pt.json data/external/countries_en.json:
-	@echo Downloading list of countries...
-	@wget -nv -O "data/external/countries_pt.json" "https://raw.githubusercontent.com/umpirsky/country-list/master/data/pt_BR/country.json"
+	@echo Download list of countries
+	@wget -nv -O "data/external/countries_pt_BR.json" "https://raw.githubusercontent.com/umpirsky/country-list/master/data/pt_BR/country.json"
 	@wget -nv -O "data/external/countries_en.json" "https://raw.githubusercontent.com/umpirsky/country-list/master/data/en/country.json"
-	@echo Done!
-	@echo
 
-# Generate countries dictionary (based on above)
-data/interim/countries_dict.pkl: loteca/data/merging/teams/countries_dict.py data/external/countries_en.json data/external/countries_pt.json
-	@echo Generating countries dictionary...
-	@python $< $(word 2,$^) $(word 3,$^) $@
+### Generate Loteca to BetExplorer teams dictionary
+data/interim/teams_ltb.pkl: loteca/data/interim/teams/loteca_to_betexp.py \
+				data/raw/betexplorer.sqlite3 \
+				data/pre/lotecas_matches.pkl \
+				data/external/countries_en.json \
+				data/external/countries_pt_BR.json
+	@echo Generate Loteca to BetExplorer teams dictionary
+	@python -m loteca.data.interim.teams.loteca_to_betexp $(word 2,$^) $(word 3,$^) $(word 4,$^) $(word 5,$^) $@
 
-# Generate first Loteca to BetExplorer teams dictionary
-loteca/data/merging/teams/loteca_betexp_dict.py: loteca/data/merging/teams/betexplorer.py loteca/data/merging/teams/loteca.py loteca/data/merging/teams/commons.py 
-data/interim/loteca_to_betexp_teams1.pkl: loteca/data/merging/teams/loteca_betexp_dict.py data/interim/loteca_site_games.pkl data/raw/betexplorer.sqlite3 data/interim/countries_dict.pkl
-	@echo Generating Loteca to BetExplorer teams dictionary...
-	@python -m loteca.data.merging.teams.loteca_betexp_dict --start-round 366 $(word 2,$^) $(word 3,$^) $(word 4,$^) $@
+loteca/data/interim/teams/betexplorer.py: \
+	loteca/data/interim/teams/commons.py \
+	loteca/data/interim/teams/util.py
+loteca/data/interim/teams/loteca.py: \
+	loteca/data/interim/teams/commons.py \
+	loteca/data/interim/teams/util.py
+loteca/data/interim/teams/loteca_to_betexp.py: \
+	loteca/data/interim/teams/betexplorer.py \
+	loteca/data/interim/teams/country.py \
+	loteca/data/interim/teams/loteca.py \
+	loteca/data/interim/teams/util.py
 
-# Generate reports
+
+
+# Updates
+
+.PHONY: update-loteca-file
+update-loteca-file: FORCE
+	@echo Download and extract loteca file
+	@wget -nv -N --no-if-modified-since -P "data/raw/" "http://www1.caixa.gov.br/loterias/_arquivos/loterias/d_loteca.zip"
+	@unzip -DD -d data/raw/ data/raw/d_loteca.zip
+	@rm data/raw/LOTECA.GIF
+	@mv data/raw/D_LOTECA.HTM data/raw/loteca.htm
+
+.PHONY: update-loteca-site
+update-loteca-site: FORCE
+	@echo Collect data from loteca site
+	@python -m loteca.data.raw.loteca_site data/raw/loteca_site.pkl
+
+.PHONY: update-betexplorer
+update-betexplorer: FORCE
+	@echo Collect BetExplorer matches
+	@cd loteca/data/raw/betexplorer/ && $(MAKE) collect-matches
+	@cp loteca/data/raw/betexplorer/db.sqlite3 data/raw/betexplorer.sqlite3
+
+.PHONY: update-countries-dict
+update-countries-dict: FORCE
+	@echo Download list of countries
+	@wget -nv -O "data/external/countries_pt_BR.json" "https://raw.githubusercontent.com/umpirsky/country-list/master/data/pt_BR/country.json"
+	@wget -nv -O "data/external/countries_en.json" "https://raw.githubusercontent.com/umpirsky/country-list/master/data/en/country.json"
+
+
+
+# Misc
+
+### Generate reports
+
+.PHONY: reports
 reports: FORCE
-	@echo Generating reports
+	@echo Generate reports
 	@mkdir -p reports
-	@jupyter nbconvert notebooks/00-ala-explore-team-names.ipynb --to html --output-dir reports
+	@jupyter nbconvert notebooks/00-ala-explore-team-names.ipynb --to html --output-dir notebooks/html/
 
 
-.PHONY: all clean FORCE
+
+#------------------
+
+.PHONY: FORCE
 FORCE:
