@@ -5,19 +5,19 @@ Project structure:
 
 .
 ├── data                                
-│   ├── external                        data from external sources
-│   ├── interim                         data used in intermediate processes
-│   ├── pre                             preprocessed data (processed to alloww further processing)
-│   ├── process                         processed data
-│   └── raw                             raw data (ready or not ready to analyse)
+│   ├── external              data from external sources
+│   ├── interim               data used in intermediate processes
+│   ├── pre                   preprocessed data (processed to alloww further processing)
+│   ├── process               processed data
+│   └── raw                   raw data (ready or not ready to analyse)
 │
-├── loteca                              source code root
+├── loteca                    source code root
 │   └── data                            
-│       ├── interim                     code here will generate data that goes into './data/interim/'
+│       ├── interim           code here will generate data that goes into './data/interim/'
 │       ├── pre
 │       ├── process
 │       └── raw
-├── notebooks                           jupyter notebooks
-│   └── html                            html generated from jupyter notebooks (for reading)
-└── references                          external references (e.g. something about what we are retrieving)
+├── notebooks                 jupyter notebooks
+│   └── html                  html generated from jupyter notebooks (for reading)
+└── references                external references (e.g. something about what we are retrieving)
 
