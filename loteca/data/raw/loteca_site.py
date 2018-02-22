@@ -79,9 +79,9 @@ def _save_loteca_site(out_loteca_site):
     to_scrap = sorted(set(range(1, last_round + 1)) - set(scrapped_nos))
 
     logger.info("There are %s rounds to collect" % len(to_scrap))
-    rounds = retrieve_loteca_rounds(to_scrap)
+    new_rounds = retrieve_loteca_rounds(to_scrap)
 
-    rounds = rounds + scrapped_rounds
+    rounds = scrapped_rounds + new_rounds
     with open(out_loteca_site, mode='wb') as fp:
         pickle.dump(rounds, fp)
 
