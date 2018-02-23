@@ -129,17 +129,11 @@ update-countries-dict: FORCE
 
 # Misc
 
-### Generate reports
-
 .PHONY: reports
 reports: FORCE
 	@echo Generate reports
 	@mkdir -p reports
-	@jupyter nbconvert notebooks/00-ala-explore-team-names.ipynb --to html --output-dir notebooks/html/
-
-
-
-#------------------
+	@cd notebooks && find -name '*.ipynb' ! -name '*-checkpoint.ipynb' -exec jupyter nbconvert {} --to html --output-dir html/ \;
 
 .PHONY: FORCE
 FORCE:
