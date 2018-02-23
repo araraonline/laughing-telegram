@@ -12,7 +12,7 @@ import loteca.data.interim.teams.loteca as loteca
 from loteca.data.interim.teams.util import re_strip
 
 
-logger = logging.getLogger('loteca-betexp-dict')
+logger = logging.getLogger('loteca-betexp-teams-dict')
 click_log.basic_config(logger)
 
 
