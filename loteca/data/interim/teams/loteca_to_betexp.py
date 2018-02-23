@@ -16,53 +16,6 @@ logger = logging.getLogger('loteca-betexp-dict')
 click_log.basic_config(logger)
 
 
-TOADD = {
-    "sport": "sport recife",
-    "vasco da gama": "vasco",
-    "vila nova": "vila nova fc",
-    "sao  caetano": "sao caetano",
-    "bragantino": "bragantino",
-    "portuguesa desportos": "portuguesa",
-    "ipatinga": "betim",
-    "americano": "americano fc",
-    "gremio prudente": "barueri",
-    "vasco": "vasco",
-    "gremio barueri": "barueri",
-    "xv piracicaba": "piracicaba",
-    "boa esporte": "boa",
-    "porto": "ca porto",
-    "caxias": "ser caxias",
-    "sorocaba": "atl. sorocaba",
-    "fluminense": "fluminense de feira",
-    "atletico": "alagoinhas",
-    "central": "central sc",
-    "boa esporte clube": "boa",
-    "guarani": "guarani de juazeiro",
-    "juventus": "gremio juventus",
-    "sao jose": "ec sao jose",
-    "guarani": "guarani ec",
-    "aguia": "aguia de maraba",
-    "moto clube": "moto club",
-    "sao jose (pa)": "ec sao jose",
-    "brasil": "brasil de pelotas",
-    "rio branco": "rio branco",
-    "palmeira": "palmeira de una",
-    "boca junior": "boca junior",
-    "vitoria": "academica vitoria",
-    "guarani": "guarani de palhoca",
-    "camburiu": "camboriu",
-    "formosa": "bosque formosa",
-    "colo colo": "colo c.",
-    "estanciano": "estanciano ec",
-    "ypiranga": "ypiranga fc",
-    "tigres do brasil": "tigres brasil",
-    "cuiaba": "cuiaba esporte",
-    "rio branco": "rio branco ac",
-    "fernandopolis": "fernandopolis",
-    "vila nova": "villa nova mg",
-}  # these names were generated in the algorithm
-   # some of them show wrong BetExplorer team names
-
 def remove_state_from_name(name, state):
     """Removes the state from a team name"""
     name = re.sub(r'\b%s$' % re.escape(state), '', name)
@@ -70,10 +23,6 @@ def remove_state_from_name(name, state):
     return name
 
 def is_same_base_team(loteca_team, betexp_team, countries):
-    if TOADD.get(loteca_team.fname) == betexp_team.fname:
-        # special case
-        return True
-
     if not (loteca_team.tokens.country or loteca_team.tokens.state):
         # country team
         fname = loteca_team.fname
