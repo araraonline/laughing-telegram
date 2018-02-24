@@ -43,6 +43,10 @@ def extract_matches(rounds):
 
     # order columns
     df = df[['roundno', 'gameno', 'date', 'teamH', 'goalsH', 'teamA', 'goalsA', 'happened']]
+
+    # fix wrong dates
+    df.loc[df.roundno == 548, 'date'] = df.loc[df.roundno == 548, 'date'] \
+                                            .apply(lambda x: x.replace(month=3))
     
     return df
 
