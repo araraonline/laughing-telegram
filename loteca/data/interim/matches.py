@@ -436,6 +436,7 @@ def save_whole_matches_dict(in_loteca_matches, in_betexp_db, in_teams_dict, \
     # generate matches dict
     logger.info("Generate Loteca to BetExplorer matches dictionary")
     result = generate_whole_matches_dict(loteca, betexp, teamsd)
+    logger.info("Found {} out of {} matches".format(len(result), loteca.shape[0]))
 
     # save matches dict
     logger.info("Save dictionary")
