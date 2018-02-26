@@ -96,6 +96,19 @@ loteca/data/interim/teams/loteca_to_betexp.py: \
 	loteca/data/interim/teams/loteca.py \
 	loteca/data/interim/teams/util.py
 
+### Generate Loteca to BetExplorer matches dictionary:
+data/interim/matches_ltb.pkl: loteca/data/interim/matches.py \
+					data/pre/lotecas_matches.pkl \
+					data/raw/betexplorer.sqlite3 \
+					data/interim/teams_ltb.pkl
+	@echo Generate Loteca to BetExplorer matches dictionary
+	@python -m loteca.data.interim.matches $(word 2,$^) $(word 3,$^) $(word 4,$^) $@
+
+loteca/data/interim/matches.py: \
+	loteca/data/interim/teams/__init__.py \
+	loteca/data/interim/teams/betexplorer.py \
+	loteca/data/interim/teams/loteca.py
+
 
 
 # Updates

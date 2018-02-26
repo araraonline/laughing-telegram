@@ -4,7 +4,9 @@ import re
 import sqlite3
 from collections import defaultdict, OrderedDict
 
+import click
 import click_log
+import numpy as np
 import pandas as pd
 
 import loteca.data.interim.teams as teams
@@ -12,6 +14,11 @@ import loteca.data.interim.teams as teams
 
 logger = logging.getLogger("loteca-betexp-matches-dict")
 click_log.basic_config(logger)
+
+
+MANUAL_TEAMS = {
+     'ATLÉTICO MADRID/ESP': {'Atl. Madrid'},
+}
 
 
 def compare_teams_rigid(team1, team2, teamsd):
@@ -69,8 +76,9 @@ def compare_teams_flex(team1, team2):
     return (loteca_pieces >= betexp_pieces) or (betexp_pieces >= loteca_pieces)  
 
 def generate_matches_dict(loteca_df, betexp_df, teamsd,
+                            ignore_date=False,
                             flexible_date=False,
-                            ignore_score=False, ignore_score_if_mod=False,
+                            ignore_score=False,
                             min_team_rigid_points=2, min_team_flex_points=2,
                             return_teams=False,
                             logger=logger):
@@ -78,25 +86,22 @@ def generate_matches_dict(loteca_df, betexp_df, teamsd,
     be quite slow depending on the inputs. So, iterate wisely.
 
     Note:
-        Be careful with games that didn't happen, as these don't have dates.
-        We're going to have to implent something different for them later.
+        Be careful with games that didn't happen, as these don't have dates. Set
+        ignore_date=True when dealing with those.
 
     Args:
         loteca_df: DataFrame containing the Loteca matches you wanna create
-            links from. All of the matches here are used to generate links, so,
-            be careful with matches that were cancelled.
+            links from. All of the matches here are used to generate links.
         betexp_df: DataFrame containing the matches from BetExplorer. Along with
-            the usual columns, remember to include the league_category, so, the
-            match filter can work.
+            the usual columns.
         teamsd: a dictionary mapping (Loteca team fname -> BetExplorer team
             fname). This is generated in the folder 'loteca/data/interim/teams/'
+        ignore_date: a boolean indicating whether or not we should ignore the
+            date.
         flexible_date: a boolean indicating whether to use flexible dates when
             comparing matches. False means the dates must be exactly equal. True
             means the dates can be 1 day away from each other.
         ignore_score: if set to True, the scores of the matches are ignored.
-        igonre_score_if_mod: if set to True, the scores of the matches are
-            ignored when the column 'scoremod' in the BetExplorer DataFrame is
-            equal to a value different then ''.
         min_team_rigid_points: when comparing matches from Loteca to BetExplorer,
             minimum amount of teams that must have a mapping in the `teamsd`
             dictionary so that the matches can be considered the same. Set it to
@@ -124,6 +129,15 @@ def generate_matches_dict(loteca_df, betexp_df, teamsd,
 
     assert min_team_flex_points >= min_team_rigid_points  # just some sanity checking
 
+    logger.info("-----")
+    logger.info("Generating matches dict...")
+    logger.info("There are {} loteca matches to find".format(loteca_df.shape[0]))
+    logger.info("ignore_date={}".format(ignore_date))
+    logger.info("flexible_date={}".format(flexible_date))
+    logger.info("ignore_score={}".format(ignore_score))
+    logger.info("min_team_rigid_points={}".format(min_team_rigid_points))
+    logger.info("min_team_flex_points={}".format(min_team_flex_points))
+
     # create set of possible matches
 
     # restrict teams
@@ -141,37 +155,33 @@ def generate_matches_dict(loteca_df, betexp_df, teamsd,
             betexp_df = betexp_df[betexp_df.teamH.isin(rigid_teams) &
                                     betexp_df.teamA.isin(rigid_teams)]
 
-    # log
-    logger.debug("original betexplorer shape: %s %s" % original_betexp_df.shape)
-    logger.debug("restricted betexplorer shape: %s %s" % betexp_df.shape)
-
     # cache DataFrames of retricted dates (to speed up)
-    logger.info("creating dataframe cache")
-    date_to_df = {}
-    for date in set(loteca_df.date):
-        if flexible_date:
-            date_to_df[date] = betexp_df[abs(betexp_df.date - date) <= pd.Timedelta(days=1)]
-        else:
-            date_to_df[date] = betexp_df[betexp_df.date == date]
+    if not ignore_date:
+        date_to_df = {}
+        for date in set(loteca_df.date):
+            if flexible_date:
+                date_to_df[date] = betexp_df[abs(betexp_df.date - date) <= pd.Timedelta(days=1)]
+            else:
+                date_to_df[date] = betexp_df[betexp_df.date == date]
 
     # core
     for i, (loteca_id, loteca_row) in enumerate(loteca_df.iterrows()):
         row = loteca_row
-        choices = date_to_df[row.date]
 
         # log
         if i % 500 == 0:
             logger.info("on match %s/%s" % (i + 1, loteca_df.shape[0]))
         
+        # filter date
+        if not ignore_date:
+            choices = date_to_df[row.date]
+        else:
+            choices = betexp_df
+
         # filter score
         if not ignore_score:
-            if ignore_score_if_mod:
-                choices = choices[(choices.scoremod != '') | 
-                                    ((choices.goalsH == row.goalsH) & 
-                                        (choices.goalsA == row.goalsA))]
-            else:
-                choices = choices[(choices.goalsH == row.goalsH) &
-                                    (choices.goalsA == row.goalsA)]
+            choices = choices[(choices.goalsH == row.goalsH) &
+                                (choices.goalsA == row.goalsA)]
 
         # filter teams
         tokeep = []  # list of rows indexes to keep
@@ -215,27 +225,223 @@ def generate_matches_dict(loteca_df, betexp_df, teamsd,
             logger.warning("%s -> %s" % (loteca_id, betexp_ids))
             continue
 
+    logger.info("%s matches linked" % len(ret))
+    logger.info("%s teams found:" % len(newteams))
+    logger.info("{}".format(newteams))
+    logger.info("-----")
+
     return (ret, newteams) if return_teams else ret
 
-
-if __name__ == '__main__':
-    logger.info("Link Loteca and BetExplorer matches")
-    logger.info("Loading files")
+def generate_whole_matches_dict(loteca_df, betexp_df, teamsd, logger=logger):
+    """Generate a dict linking Loteca matches to BetExplorer matches through
+    various iterations.
     
+    This function will call generate_matches_dict() a lot of times. At each
+    call, the amount of matches we are searching gets lower, but, we give more
+    freedom in how two matches are linked.
+
+    Args:
+        loteca_df: DataFrame containing the Loteca matches you wanna create
+            links from. All of the matches here are used to generate links.
+        betexp_df: DataFrame containing the matches from BetExplorer. Along with
+            the usual columns.
+        teamsd: a dictionary mapping (Loteca team fname -> BetExplorer team
+            fname). This is generated in the folder 'loteca/data/interim/teams/'
+        logger: the logger to be used. Defaults to the logger defined in this
+            module.
+
+    Returns:
+        An OrderedDict that maps (Loteca match ID -> BetExplorer match ID).
+    """
+    ret = OrderedDict()
+
+    loteca = loteca_df.copy()
+    betexp = betexp_df.copy()
+    teamsd = teamsd.copy()
+
+    loteca0 = loteca[~loteca.happened]  # games that didn't happen
+    loteca1 = loteca[loteca.happened]  # games that happened
+
+    #### PREPROCESS TEAMS DICT
+
+    MANUAL_TEAMS = {
+         'ATLÉTICO MADRID/ESP': {'Atl. Madrid'},
+    }
+    for k, v in MANUAL_TEAMS.items(): teamsd[k] |= v
+
+    #### MAKE ITERATIONS (for games that happened)
+
+    # Link matches we are sure
+    logger.info("Link matches that we are sure - 1 iteration")
+    # (close date) (same score) (2 teams the same)*
+    df = loteca1
+    results = generate_matches_dict(df, betexp, teamsd, logger=logger,                                             
+                                             flexible_date=True,
+                                             min_team_rigid_points=2, 
+                                             min_team_flex_points=2,
+                                             return_teams=False)
+    ret.update(results)
+
+    # Discover some new teams
+    logger.info("Discover some new teams - 3 iterations")
+    # (close date) (same score) (1 team the same) (other team alike)*
+    df = df[~df.index.isin(ret)]
+    results, newteams = generate_matches_dict(df, betexp, teamsd, logger=logger,                                         
+                                             flexible_date=True,
+                                             min_team_rigid_points=1, 
+                                             min_team_flex_points=2,
+                                             return_teams=True)
+    for k, v in newteams.items(): teamsd[k] |= v
+    ret.update(results)
+
+    # Discover some new teams
+    # (close date) (same score) (1 team the same) (other team whatever)*
+    df = df[~df.index.isin(ret)]
+    results, newteams = generate_matches_dict(df, betexp, teamsd, logger=logger,                                         
+                                             flexible_date=True,
+                                             min_team_rigid_points=1, 
+                                             min_team_flex_points=1,
+                                             return_teams=True)
+    for k, v in newteams.items(): teamsd[k] |= v
+    ret.update(results)
+
+    # Discover some new teams
+    # (close date) (same score) (2 teams alike)*
+    df = df[~df.index.isin(ret)]
+    results, newteams = generate_matches_dict(df, betexp, teamsd, logger=logger,                                         
+                                             flexible_date=True,
+                                             min_team_rigid_points=0, 
+                                             min_team_flex_points=2,
+                                             return_teams=True)
+    for k, v in newteams.items(): teamsd[k] |= v
+    ret.update(results)
+
+    # Discover some new scores
+    logger.info("Discover some new scores - 2 iterations")
+    # (close date) (different score) (2 teams the same)
+    df = df[~df.index.isin(ret)]
+    results, newteams = generate_matches_dict(df, betexp, teamsd, logger=logger,                                         
+                                             flexible_date=True,
+                                             min_team_rigid_points=2, 
+                                             min_team_flex_points=2,
+                                             ignore_score=True, 
+                                             return_teams=True)
+    for k, v in newteams.items(): teamsd[k] |= v
+    ret.update(results)
+
+    # Discover some new scores
+    # (close date) (different score) (2 teams alike)
+    df = df[~df.index.isin(ret)]
+    results, newteams = generate_matches_dict(df, betexp, teamsd, logger=logger,                                         
+                                             flexible_date=True,
+                                             min_team_rigid_points=0, 
+                                             min_team_flex_points=2,
+                                             ignore_score=True, 
+                                             return_teams=True)
+    for k, v in newteams.items(): teamsd[k] |= v
+    ret.update(results)
+
+    # if we try only 1 team alike we get loads of bad results
+
+    #### MAKE ITERATIONS (for games that didn't happen)
+    logger.info("Discover matches that didn't happen - 1 iteration")
+    df1 = loteca0
+    df2 = betexp[betexp.scoremod.isin(['ABN.', 'AWA.', 'CAN.', 'INT.', 'POSTP.', 'WO.'])]
+    results, newteams = generate_matches_dict(df1, df2, teamsd, logger=logger,    
+                                             ignore_date=True,
+                                             ignore_score=True,
+                                             min_team_rigid_points=2,
+                                             min_team_flex_points=2,
+                                             return_teams=True)
+    for k, v in newteams.items(): teamsd[k] |= v
+    ret.update(results)
+
+    #### REMOVE BAD RESULTS
+    del ret[10219]
+
+    return ret
+    
+@click.command()
+@click.argument('in-loteca-matches', type=click.Path(exists=True))
+@click.argument('in-betexp-db', type=click.Path(exists=True))
+@click.argument('in-teams-dict', type=click.Path(exists=True))
+@click.argument('out-matches-dict', type=click.Path(writable=True))
+@click.option('--start-round', default=366)
+@click_log.simple_verbosity_option(logger=logger, default='INFO')
+def save_whole_matches_dict(in_loteca_matches, in_betexp_db, in_teams_dict, \
+                                out_matches_dict, start_round):
+    """Create and save a mapping that links Loteca matches into BetExplorer
+    matches.
+
+    This is made by iterating over the Loteca matches and finding those in the
+    BetExplorer database that are equivalent. If there's only one BetExplorer
+    equivalent for a Loteca match, we stabilish a link.
+
+    This process is repeated various times, each time with a different
+    prerequisite to consider two matches the same. During the process, we also
+    discover some teams that should be linked, and we log those as an INFO.
+
+    The process is quite long, so be sure to be patient, and not to run this
+    unless it is necessary.
+
+    \b
+    Inputs:
+        loteca-matches (pkl): a DataFrame containing matches that came from the
+            Loteca site.
+        betexp-db (sqlite3): the BetExplorer database, with all its matches.
+        teams-dict (pkl): a dictionary that maps (Loteca team strings ->
+            BetExplorer team strings). It was generated in the folder
+            'loteca/data/interim/teams/'.
+
+    \b
+    Outputs:
+        matches-dict (pkl): a dictionary that maps (Loteca match ID ->
+            BetExplorer match ID). Here, the Loteca ID corresponds to the
+            DataFrame index for the row and, the BetExplorer ID corresponds to
+            the match ID that was provided by BetExplorer itself, as it is
+            unique.
+
+    \b
+    Options:
+        start-round (int): the first round from Loteca we want to link matches
+            from. Defaults to 366 (the first round where we have money
+            information).
+        verbosity (DEBUG, INFO or WARNING): 'DEBUG' will show you all the
+            linkings that are being made (they are a lot). 'INFO' will show you
+            more general info, like the progress in the iterations. 'WARNING'
+            will only show failed linkings (the ones where we find two
+            BetExplorer matches for one Loteca match).
+    """
+    logger.info("Load files")
+
     # load loteca
-    loteca = pd.read_pickle('data/pre/lotecas_matches.pkl')
-    loteca = loteca[loteca.roundno >= 366]  # exclude old rounds
+    loteca = pd.read_pickle(in_loteca_matches)
+    loteca = loteca[loteca.roundno >= start_round]  # exclude old rounds
 
     # load betexplorer
-    conn = sqlite3.connect('../loteca/data/raw/betexplorer/db.sqlite3')
+    conn = sqlite3.connect(in_betexp_db)
     betexp = pd.read_sql_query('SELECT id, league_category, date, teamH, teamA, score, scoremod FROM matches', conn)
     conn.close()
 
+    # preprocess betexplorer
     betexp.date = pd.to_datetime(betexp.date, dayfirst=True)
     betexp.score = betexp.score.str.strip()
     betexp['goalsH'] = [int(score.split(':')[0]) if score else np.nan for score in betexp.score]
     betexp['goalsA'] = [int(score.split(':')[1]) if score else np.nan for score in betexp.score]
 
-    # load dict
-    with open('../data/interim/teams_ltb.pkl', mode='rb') as fp:
+    # load teams dict
+    with open(in_teams_dict, mode='rb') as fp:
         teamsd = pickle.load(fp)
+
+    # generate matches dict
+    logger.info("Generate Loteca to BetExplorer matches dictionary")
+    result = generate_whole_matches_dict(loteca, betexp, teamsd)
+
+    # save matches dict
+    logger.info("Save dictionary")
+    with open(out_matches_dict, mode='wb') as fp:
+        pickle.dump(result, fp)
+
+
+if __name__ == '__main__':
+    save_whole_matches_dict()
