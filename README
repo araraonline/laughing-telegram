@@ -20,4 +20,3 @@ Project structure:
 ├── notebooks                 jupyter notebooks
 │   └── html                  html generated from jupyter notebooks (for reading)
 └── references                external references (e.g. something about what we are retrieving)
-
