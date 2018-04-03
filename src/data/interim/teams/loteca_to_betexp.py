@@ -6,10 +6,10 @@ from collections import defaultdict
 import click
 import click_log
 
-import loteca.data.interim.teams.betexplorer as betexplorer
-import loteca.data.interim.teams.country as country
-import loteca.data.interim.teams.loteca as loteca
-from loteca.data.interim.teams.util import re_strip
+import src.data.interim.teams.betexplorer as betexplorer
+import src.data.interim.teams.country as country
+import src.data.interim.teams.loteca as loteca
+from src.data.interim.teams.util import re_strip
 
 
 logger = logging.getLogger('loteca-betexp-teams-dict')
@@ -21,6 +21,7 @@ def remove_state_from_name(name, state):
     name = re.sub(r'\b%s$' % re.escape(state), '', name)
     name = re_strip(name)
     return name
+
 
 def is_same_base_team(loteca_team, betexp_team, countries):
     if not (loteca_team.tokens.country or loteca_team.tokens.state):
@@ -38,11 +39,12 @@ def is_same_base_team(loteca_team, betexp_team, countries):
             return False
     else:
         # international team
-        return (betexp_team.tokens.state is None) and \
-                    (loteca_team.fname == betexp_team.fname)
+        return (betexp_team.tokens.state is None and
+                loteca_team.fname == betexp_team.fname)
+
 
 def create_whole_dict(in_betexp_db, in_loteca_matches,
-        in_countries_en, in_countries_ptbr, start_round=366):
+                      in_countries_en, in_countries_ptbr, start_round=366):
     """Maps Loteca team strings into BetExplorer team strings
 
     This function first retrieve the matches for each source and then compares
@@ -89,7 +91,6 @@ def create_whole_dict(in_betexp_db, in_loteca_matches,
     return dict
 
 
-
 # CLI
 
 @click.command()
@@ -117,7 +118,7 @@ def CLI(in_betexp_db, in_loteca_matches, in_countries_en, in_countries_ptbr,
             english)
         in-countries-ptbr (json): a file containing the list of countries (in
             portuguese)
-    
+
     \b
     Outputs:
         loteca-to-betexp (pkl): a dict containing the mapping (Loteca string ->

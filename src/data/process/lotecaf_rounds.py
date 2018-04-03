@@ -8,17 +8,20 @@ import pandas as pd
 
 CUTOFF = pd.to_datetime('2016-01-02')
 
+
 def get_totalprize13(total_revenue, date):
     if date >= CUTOFF:
         return total_revenue * 0.393 * 0.7 * 0.15 / 1.045
     else:
         return total_revenue * 0.400 * 0.7 * 0.15 / 1.045
-        
+
+
 def get_totalprize14(total_revenue, acc, date):
     if date >= CUTOFF:
         return total_revenue * 0.393 * 0.7 * 0.70 / 1.045 + acc
     else:
         return total_revenue * 0.400 * 0.7 * 0.70 / 1.045 + acc
+
 
 def get_accumulated05(total_revenue, date):
     if date >= CUTOFF:
@@ -61,13 +64,13 @@ def calculate_prizes(df):
             lastacc13 = df.loc[i - 1, 'acc13']
         except KeyError:
             lastacc13 = np.nan
-            
+
         # last accumulated 13 rights
         try:
             lastacc14 = df.loc[i - 1, 'acc14']
         except KeyError:
             lastacc14 = np.nan
-            
+
         # accumulated for rounds ending in 0 or 5
         if i % 5 == 0:
             values = df.loc[i - 5: i - 1, 'acc05']
@@ -77,10 +80,10 @@ def calculate_prizes(df):
                 lastacc05 = np.nan
         else:
             lastacc05 = 0.0
-            
+
         # total accumulated (for this round)
         totalacc = lastacc13 + lastacc14 + lastacc05
-        
+
         # calculate prizes and stuff
         total_revenue = df.loc[i, 'total_revenue']
         date = df.loc[i, 'date']
@@ -89,10 +92,10 @@ def calculate_prizes(df):
         acc13 = total13 if df.loc[i, 'winners13'] == 0 else 0.0
         acc14 = total14 if df.loc[i, 'winners14'] == 0 else 0.0
         acc05 = get_accumulated05(total_revenue, date)
-        
+
         # assign values
         df.loc[i, 'total13'] = total13
-        df.loc[i, 'total14'] = total14    
+        df.loc[i, 'total14'] = total14
         df.loc[i, 'totalacc'] = totalacc
         df.loc[i, 'acc13'] = acc13
         df.loc[i, 'acc14'] = acc14
@@ -102,6 +105,7 @@ def calculate_prizes(df):
     df = df[df.totalacc.notnull()]
 
     return df
+
 
 def process_loteca_rounds(df):
     """Process the loteca rounds
@@ -137,7 +141,7 @@ def process_loteca_rounds(df):
     return df
 
 
-
+##################################
 # CLI
 
 @click.command()

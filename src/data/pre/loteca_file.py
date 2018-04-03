@@ -6,15 +6,17 @@ import parsel
 
 
 def _read_int(x):
-    try: 
+    try:
         return int(x)
-    except TypeError: 
+    except TypeError:
         return
 
+
 def _read_float(x):
-        if x == ' - ': 
+        if x == ' - ':
             return None
-        return float(x.replace('.', '').replace(',', '.'))  
+        return float(x.replace('.', '').replace(',', '.'))
+
 
 def extract_df(in_loteca_htm):
     """Preprocess the data in the loteca file
@@ -23,7 +25,7 @@ def extract_df(in_loteca_htm):
         A DataFrame with all the rounds present in the Loteca file
     """
     # load file
-    
+
     with open(in_loteca_htm, mode='rb') as fp:
         body = fp.read()
         body = body.decode('windows-1252')
@@ -57,8 +59,9 @@ def extract_df(in_loteca_htm):
     df = df.drop(['Jogo_%s' % i for i in range(1, 15)], axis=1)
 
     # rename columns
-    df.columns = ['roundno', 'date', 'winners14', 'shared14', 'accumulated', 'accumulated14', 
-        'winners13', 'shared13', 'winners12', 'shared12', 'total_revenue', 'prize_estimative']
+    df.columns = ['roundno', 'date', 'winners14', 'shared14', 'accumulated',
+                  'accumulated14', 'winners13', 'shared13', 'winners12',
+                  'shared12', 'total_revenue', 'prize_estimative']
 
     # convert types
     df['roundno'] = df.roundno.apply(_read_int)
@@ -98,7 +101,7 @@ def preprocess_file(in_loteca_htm, out_loteca_rounds):
     """
     # extract
     df = extract_df(in_loteca_htm)
-    
+
     # save
     with open(out_loteca_rounds, mode='wb') as fp:
         pickle.dump(df, fp)
