@@ -7,7 +7,7 @@ import click
 import parsel
 
 sys.path.append('../../../..')
-from loteca.data.raw.util import requests_retry_session
+from src.data.raw.util import requests_retry_session
 
 
 def create_table(cursor):

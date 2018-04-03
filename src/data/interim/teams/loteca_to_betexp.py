@@ -6,10 +6,10 @@ from collections import defaultdict
 import click
 import click_log
 
-import loteca.data.interim.teams.betexplorer as betexplorer
-import loteca.data.interim.teams.country as country
-import loteca.data.interim.teams.loteca as loteca
-from loteca.data.interim.teams.util import re_strip
+import src.data.interim.teams.betexplorer as betexplorer
+import src.data.interim.teams.country as country
+import src.data.interim.teams.loteca as loteca
+from src.data.interim.teams.util import re_strip
 
 
 logger = logging.getLogger('loteca-betexp-teams-dict')

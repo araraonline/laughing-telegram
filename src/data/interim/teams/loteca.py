@@ -3,8 +3,8 @@ import re
 import pandas as pd
 from unidecode import unidecode
 
-from loteca.data.interim.teams.commons import Team, Tokens
-from loteca.data.interim.teams.util import re_strip
+from src.data.interim.teams.commons import Team, Tokens
+from src.data.interim.teams.util import re_strip
 
 
 REPLACEMENTS = {

@@ -9,7 +9,7 @@ import click_log
 import numpy as np
 import pandas as pd
 
-import loteca.data.interim.teams as teams
+import src.data.interim.teams as teams
 
 
 logger = logging.getLogger("loteca-betexp-matches-dict")

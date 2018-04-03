@@ -6,8 +6,8 @@ from collections import defaultdict
 import click_log
 import pandas as pd
 
-from loteca.data.interim.teams.commons import Team, Tokens
-from loteca.data.interim.teams.util import re_strip
+from src.data.interim.teams.commons import Team, Tokens
+from src.data.interim.teams.util import re_strip
 
 
 logger = logging.getLogger('betexp-teams')
