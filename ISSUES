@@ -1,4 +1,0 @@
-Bad dates:
-	Loteca matches 'dt_jogo' are wrong. They probably messed up with the datetime
-	strings and used days instead of months. We should, so, use 'dtApuracao', as it
-	seems to be correct and what they use to give the round date.
