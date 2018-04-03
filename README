@@ -1,6 +1,7 @@
 Project structure:
 
-┌── data
+.
+├── data
 │   ├── raw                   raw data (ready or not ready to analyse)
 │   ├── pre                   preprocessed data (ready to analyse)
 │   ├── process               processed data
