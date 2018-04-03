@@ -7,7 +7,7 @@ Project structure:
 ├── data                                
 │   ├── external              data from external sources
 │   ├── interim               data used in intermediate processes
-│   ├── pre                   preprocessed data (processed to alloww further processing)
+│   ├── pre                   preprocessed data (processed to allow further processing)
 │   ├── process               processed data
 │   └── raw                   raw data (ready or not ready to analyse)
 │
