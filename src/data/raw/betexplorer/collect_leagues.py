@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 import click
 import parsel
 
-import import_magic
+import pathmagic
 from src.data.raw.util import requests_retry_session
 
 

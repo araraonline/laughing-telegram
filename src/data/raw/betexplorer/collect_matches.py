@@ -5,7 +5,7 @@ import click
 import click_log
 import parsel
 
-import import_magic
+import pathmagic
 from src.data.raw.util import requests_retry_session
 
 
