@@ -17,12 +17,13 @@ click_log.basic_config(logger)
 
 
 MANUAL_TEAMS = {
-     'ATLÉTICO MADRID/ESP': {'Atl. Madrid'},
+    'ATLÉTICO MADRID/ESP' : {'Atl. Madrid'},
 }
 
 
 def compare_teams_rigid(team1, team2, teamsd):
     return team2 in teamsd.get(team1, set())
+
 
 def compare_teams_flex(team1, team2):
     """Check if two teams are the same based on their names
@@ -73,15 +74,16 @@ def compare_teams_flex(team1, team2):
         return False
 
     # A >= B means A contains every element of B
-    return (loteca_pieces >= betexp_pieces) or (betexp_pieces >= loteca_pieces)  
+    return (loteca_pieces >= betexp_pieces) or (betexp_pieces >= loteca_pieces)
+
 
 def generate_matches_dict(loteca_df, betexp_df, teamsd,
-                            ignore_date=False,
-                            flexible_date=False,
-                            ignore_score=False,
-                            min_team_rigid_points=2, min_team_flex_points=2,
-                            return_teams=False,
-                            logger=logger):
+                          ignore_date=False,
+                          flexible_date=False,
+                          ignore_score=False,
+                          min_team_rigid_points=2, min_team_flex_points=2,
+                          return_teams=False,
+                          logger=logger):
     """Generates a dictionary matching Loteca and BetExplorer matches. This may
     be quite slow depending on the inputs. So, iterate wisely.
 
@@ -120,12 +122,11 @@ def generate_matches_dict(loteca_df, betexp_df, teamsd,
         If return_teams is set to True, the function will return a tuple
         (matches dict, new teams dict). Matches dict is the dictionary referred
         above. New teams dict is a dictionary that maps (Loteca team string ->
-        set of BetExplorer team strings) for teams that have no translation in 
+        set of BetExplorer team strings) for teams that have no translation in
         teamsd yet.
     """
     ret = OrderedDict()  # good for debugging
     newteams = defaultdict(set)
-    original_betexp_df = betexp_df  # keep as a reminder
 
     assert min_team_flex_points >= min_team_rigid_points  # just some sanity checking
 
@@ -149,11 +150,11 @@ def generate_matches_dict(loteca_df, betexp_df, teamsd,
         if min_team_rigid_points == 1:
             # at least one team must be in the teamd values
             betexp_df = betexp_df[betexp_df.teamH.isin(rigid_teams) |
-                                    betexp_df.teamA.isin(rigid_teams)]
+                                  betexp_df.teamA.isin(rigid_teams)]
         else:
             # both teams must be in the teamd values
             betexp_df = betexp_df[betexp_df.teamH.isin(rigid_teams) &
-                                    betexp_df.teamA.isin(rigid_teams)]
+                                  betexp_df.teamA.isin(rigid_teams)]
 
     # cache DataFrames of retricted dates (to speed up)
     if not ignore_date:
@@ -171,7 +172,7 @@ def generate_matches_dict(loteca_df, betexp_df, teamsd,
         # log
         if i % 500 == 0:
             logger.info("on match %s/%s" % (i + 1, loteca_df.shape[0]))
-        
+
         # filter date
         if not ignore_date:
             choices = date_to_df[row.date]
@@ -181,7 +182,7 @@ def generate_matches_dict(loteca_df, betexp_df, teamsd,
         # filter score
         if not ignore_score:
             choices = choices[(choices.goalsH == row.goalsH) &
-                                (choices.goalsA == row.goalsA)]
+                              (choices.goalsA == row.goalsA)]
 
         # filter teams
         tokeep = []  # list of rows indexes to keep
@@ -232,10 +233,11 @@ def generate_matches_dict(loteca_df, betexp_df, teamsd,
 
     return (ret, newteams) if return_teams else ret
 
+
 def generate_whole_matches_dict(loteca_df, betexp_df, teamsd, logger=logger):
     """Generate a dict linking Loteca matches to BetExplorer matches through
     various iterations.
-    
+
     This function will call generate_matches_dict() a lot of times. At each
     call, the amount of matches we are searching gets lower, but, we give more
     freedom in how two matches are linked.
@@ -265,7 +267,7 @@ def generate_whole_matches_dict(loteca_df, betexp_df, teamsd, logger=logger):
     #### PREPROCESS TEAMS DICT
 
     MANUAL_TEAMS = {
-         'ATLÉTICO MADRID/ESP': {'Atl. Madrid'},
+        'ATLÉTICO MADRID/ESP' : {'Atl. Madrid'},
     }
     for k, v in MANUAL_TEAMS.items(): teamsd[k] |= v
 
@@ -275,44 +277,44 @@ def generate_whole_matches_dict(loteca_df, betexp_df, teamsd, logger=logger):
     logger.info("Link matches that we are sure - 1 iteration")
     # (close date) (same score) (2 teams the same)*
     df = loteca1
-    results = generate_matches_dict(df, betexp, teamsd, logger=logger,                                             
-                                             flexible_date=True,
-                                             min_team_rigid_points=2, 
-                                             min_team_flex_points=2,
-                                             return_teams=False)
+    results = generate_matches_dict(df, betexp, teamsd, logger=logger,
+                                    flexible_date=True,
+                                    min_team_rigid_points=2,
+                                    min_team_flex_points=2,
+                                    return_teams=False)
     ret.update(results)
 
     # Discover some new teams
     logger.info("Discover some new teams - 3 iterations")
     # (close date) (same score) (1 team the same) (other team alike)*
     df = df[~df.index.isin(ret)]
-    results, newteams = generate_matches_dict(df, betexp, teamsd, logger=logger,                                         
-                                             flexible_date=True,
-                                             min_team_rigid_points=1, 
-                                             min_team_flex_points=2,
-                                             return_teams=True)
+    results, newteams = generate_matches_dict(df, betexp, teamsd, logger=logger,
+                                              flexible_date=True,
+                                              min_team_rigid_points=1,
+                                              min_team_flex_points=2,
+                                              return_teams=True)
     for k, v in newteams.items(): teamsd[k] |= v
     ret.update(results)
 
     # Discover some new teams
     # (close date) (same score) (1 team the same) (other team whatever)*
     df = df[~df.index.isin(ret)]
-    results, newteams = generate_matches_dict(df, betexp, teamsd, logger=logger,                                         
-                                             flexible_date=True,
-                                             min_team_rigid_points=1, 
-                                             min_team_flex_points=1,
-                                             return_teams=True)
+    results, newteams = generate_matches_dict(df, betexp, teamsd, logger=logger,
+                                              flexible_date=True,
+                                              min_team_rigid_points=1,
+                                              min_team_flex_points=1,
+                                              return_teams=True)
     for k, v in newteams.items(): teamsd[k] |= v
     ret.update(results)
 
     # Discover some new teams
     # (close date) (same score) (2 teams alike)*
     df = df[~df.index.isin(ret)]
-    results, newteams = generate_matches_dict(df, betexp, teamsd, logger=logger,                                         
-                                             flexible_date=True,
-                                             min_team_rigid_points=0, 
-                                             min_team_flex_points=2,
-                                             return_teams=True)
+    results, newteams = generate_matches_dict(df, betexp, teamsd, logger=logger,
+                                              flexible_date=True,
+                                              min_team_rigid_points=0,
+                                              min_team_flex_points=2,
+                                              return_teams=True)
     for k, v in newteams.items(): teamsd[k] |= v
     ret.update(results)
 
@@ -320,24 +322,24 @@ def generate_whole_matches_dict(loteca_df, betexp_df, teamsd, logger=logger):
     logger.info("Discover some new scores - 2 iterations")
     # (close date) (different score) (2 teams the same)
     df = df[~df.index.isin(ret)]
-    results, newteams = generate_matches_dict(df, betexp, teamsd, logger=logger,                                         
-                                             flexible_date=True,
-                                             min_team_rigid_points=2, 
-                                             min_team_flex_points=2,
-                                             ignore_score=True, 
-                                             return_teams=True)
+    results, newteams = generate_matches_dict(df, betexp, teamsd, logger=logger,
+                                              flexible_date=True,
+                                              min_team_rigid_points=2,
+                                              min_team_flex_points=2,
+                                              ignore_score=True,
+                                              return_teams=True)
     for k, v in newteams.items(): teamsd[k] |= v
     ret.update(results)
 
     # Discover some new scores
     # (close date) (different score) (2 teams alike)
     df = df[~df.index.isin(ret)]
-    results, newteams = generate_matches_dict(df, betexp, teamsd, logger=logger,                                         
-                                             flexible_date=True,
-                                             min_team_rigid_points=0, 
-                                             min_team_flex_points=2,
-                                             ignore_score=True, 
-                                             return_teams=True)
+    results, newteams = generate_matches_dict(df, betexp, teamsd, logger=logger,
+                                              flexible_date=True,
+                                              min_team_rigid_points=0,
+                                              min_team_flex_points=2,
+                                              ignore_score=True,
+                                              return_teams=True)
     for k, v in newteams.items(): teamsd[k] |= v
     ret.update(results)
 
@@ -347,12 +349,12 @@ def generate_whole_matches_dict(loteca_df, betexp_df, teamsd, logger=logger):
     logger.info("Discover matches that didn't happen - 1 iteration")
     df1 = loteca0
     df2 = betexp[betexp.scoremod.isin(['ABN.', 'AWA.', 'CAN.', 'INT.', 'POSTP.', 'WO.'])]
-    results, newteams = generate_matches_dict(df1, df2, teamsd, logger=logger,    
-                                             ignore_date=True,
-                                             ignore_score=True,
-                                             min_team_rigid_points=2,
-                                             min_team_flex_points=2,
-                                             return_teams=True)
+    results, newteams = generate_matches_dict(df1, df2, teamsd, logger=logger,
+                                              ignore_date=True,
+                                              ignore_score=True,
+                                              min_team_rigid_points=2,
+                                              min_team_flex_points=2,
+                                              return_teams=True)
     for k, v in newteams.items(): teamsd[k] |= v
     ret.update(results)
 
@@ -360,7 +362,8 @@ def generate_whole_matches_dict(loteca_df, betexp_df, teamsd, logger=logger):
     del ret[10219]
 
     return ret
-    
+
+
 @click.command()
 @click.argument('in-loteca-matches', type=click.Path(exists=True))
 @click.argument('in-betexp-db', type=click.Path(exists=True))
@@ -368,8 +371,8 @@ def generate_whole_matches_dict(loteca_df, betexp_df, teamsd, logger=logger):
 @click.argument('out-matches-dict', type=click.Path(writable=True))
 @click.option('--start-round', default=366)
 @click_log.simple_verbosity_option(logger=logger, default='INFO')
-def save_whole_matches_dict(in_loteca_matches, in_betexp_db, in_teams_dict, \
-                                out_matches_dict, start_round):
+def save_whole_matches_dict(in_loteca_matches, in_betexp_db, in_teams_dict,
+                            out_matches_dict, start_round):
     """Create and save a mapping that links Loteca matches into BetExplorer
     matches.
 

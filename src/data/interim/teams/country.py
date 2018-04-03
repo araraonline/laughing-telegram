@@ -1,6 +1,5 @@
 import json
 
-import click
 from unidecode import unidecode
 
 
@@ -33,8 +32,10 @@ def get_country_translations(loc1, loc2):
 
     return ret
 
+
 def standardize(country):
     return unidecode(country).lower()
+
 
 def make_translations(in_countries_en, in_countries_ptbr):
     """Generate dictionary to translate Loteca to BetExplorer country names

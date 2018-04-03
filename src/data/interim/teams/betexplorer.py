@@ -27,7 +27,7 @@ LEAGUE_DICT = {
     'Campeonato Mineiro': 'MG',
     'Campeonato Paraense': 'PA',
     'Campeonato Paranaense': 'PR',
-    'Campeonato Paulista': 'SP',    
+    'Campeonato Paulista': 'SP',
     'Campeonato Pernambucano': 'PE',
     'Campeonato Potiguar': 'RN',
     'Campeonato Sergipano': 'SE',
@@ -36,6 +36,7 @@ LEAGUE_DICT = {
     'Campeonato Maranhense': 'MA',
     'Campeonato Piauiense': 'PI',
 }
+
 
 def generate_name_to_strings(df):
     """Generates a BetExplorer team name to BetExplorer team strings mapping
@@ -55,6 +56,7 @@ def generate_name_to_strings(df):
         dict[name].append(string)
 
     return dict
+
 
 def guess_state(betexplorer_name, brazilian_df, name_to_strings):
     """Guess the state for a brazilian team
@@ -92,6 +94,7 @@ def guess_state(betexplorer_name, brazilian_df, name_to_strings):
         logger.warning('"%s" found in these states: %s' % (betexplorer_name, sorted(states)))
         return None
 
+
 def extract_tokens(betexplorer_string):
     """Extract the tokens from a BetExplorer team string
 
@@ -112,16 +115,15 @@ def extract_tokens(betexplorer_string):
     """
     str = betexplorer_string
 
-    # tokens
-    ## women
+    # women token
     str, women = re.subn(r'\bW\b', '', str)
     women = bool(women)
 
-    # am
+    # am token
     str, am = re.subn(r'\(Am\)', '', str)
     am = bool(am)
 
-    ## under XX
+    # under XX token
     under = re.search(r'\bU(\d{2})\b', str)
     if under:
         under = int(under.group(1))
@@ -129,7 +131,7 @@ def extract_tokens(betexplorer_string):
     else:
         under = 0
 
-    ## country
+    # country token
     country = re.search(r'\(([a-zA-Z]{3})\)', str)
     if country:
         country = country.group(1)
@@ -138,10 +140,10 @@ def extract_tokens(betexplorer_string):
     else:
         country = None
 
-    # state
+    # state token
     state = None
 
-    ## create tokens object
+    # create tokens object
     tokens = Tokens(state, country, am, under, women)
 
     # the rest is the name of the team
@@ -149,8 +151,10 @@ def extract_tokens(betexplorer_string):
 
     return str, tokens
 
+
 def format_name(name):
     return name.lower()
+
 
 def generate_string(name, tokens, use_country=False):
     """Generates a new BetExplorer team string
@@ -176,6 +180,7 @@ def generate_string(name, tokens, use_country=False):
         str += ' (%s)' % tokens.country.capitalize()
 
     return str
+
 
 def retrieve_teams(in_betexp_db):
     """Retrieves a list of BetExplorer teams

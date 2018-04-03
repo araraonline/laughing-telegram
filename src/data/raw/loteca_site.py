@@ -21,6 +21,7 @@ def ts_now():
     ts = time.timestamp()
     return int(ts)
 
+
 def get_last_round():
     """Retrieves the current Loteca round number"""
     url = FIRST_URL.format(ts_now() * 1000)
@@ -31,6 +32,7 @@ def get_last_round():
     roundno = response.json()['concurso']
     return roundno
 
+
 def get_scrapped_rounds(in_loteca_site):
     """Retrieves the rounds that have already been scrapped
 
@@ -40,7 +42,7 @@ def get_scrapped_rounds(in_loteca_site):
 
     Returns:
         A list of dictionaries, each one corresponding to a round that have
-        already been scrapped. 
+        already been scrapped.
     """
     try:
         with open(in_loteca_site, mode='rb') as fp:
@@ -49,7 +51,8 @@ def get_scrapped_rounds(in_loteca_site):
         rounds = []
 
     return rounds
-    
+
+
 def retrieve_loteca_rounds(roundnos):
     """Collect raw loteca rounds
 
@@ -70,6 +73,7 @@ def retrieve_loteca_rounds(roundnos):
         rounds.append(round)
 
     return rounds
+
 
 def _save_loteca_site(out_loteca_site):
     scrapped_rounds = get_scrapped_rounds(out_loteca_site)

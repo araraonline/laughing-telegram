@@ -5,11 +5,11 @@ from urllib3.util.retry import Retry
 
 def requests_retry_session(**retry_kwargs):
     """This will create a requests session that can retry failed requests
-    easily. 
+    easily.
 
     Gently copied from:
     https://www.peterbe.com/plog/best-practice-with-retries-with-requests
-    
+
     For more information on the kwargs, look at:
     http://urllib3.readthedocs.io/en/latest/reference/urllib3.util.html#module-urllib3.util.retry
     """

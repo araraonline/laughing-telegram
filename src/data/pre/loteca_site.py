@@ -45,10 +45,12 @@ def extract_matches(rounds):
     df = df[['roundno', 'gameno', 'date', 'teamH', 'goalsH', 'teamA', 'goalsA', 'happened']]
 
     # fix wrong dates
-    df.loc[df.roundno == 548, 'date'] = df.loc[df.roundno == 548, 'date'] \
-                                            .apply(lambda x: x.replace(month=3))
-    
+    old_dates = df.loc[df.roundno == 548, 'date']
+    new_dates = old_dates.apply(lambda x: x.replace(month=3))
+    df.loc[df.roundno == 548, 'date'] = new_dates
+
     return df
+
 
 def _save_matches(in_loteca_site, out_lotecas_matches):
     with open(in_loteca_site, mode='rb') as fp:

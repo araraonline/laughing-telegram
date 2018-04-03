@@ -22,6 +22,7 @@ def remove_state_from_name(name, state):
     name = re_strip(name)
     return name
 
+
 def is_same_base_team(loteca_team, betexp_team, countries):
     if not (loteca_team.tokens.country or loteca_team.tokens.state):
         # country team
@@ -38,11 +39,12 @@ def is_same_base_team(loteca_team, betexp_team, countries):
             return False
     else:
         # international team
-        return (betexp_team.tokens.state is None) and \
-                    (loteca_team.fname == betexp_team.fname)
+        return (betexp_team.tokens.state is None and
+                loteca_team.fname == betexp_team.fname)
+
 
 def create_whole_dict(in_betexp_db, in_loteca_matches,
-        in_countries_en, in_countries_ptbr, start_round=366):
+                      in_countries_en, in_countries_ptbr, start_round=366):
     """Maps Loteca team strings into BetExplorer team strings
 
     This function first retrieve the matches for each source and then compares
@@ -89,7 +91,6 @@ def create_whole_dict(in_betexp_db, in_loteca_matches,
     return dict
 
 
-
 # CLI
 
 @click.command()
@@ -117,7 +118,7 @@ def CLI(in_betexp_db, in_loteca_matches, in_countries_en, in_countries_ptbr,
             english)
         in-countries-ptbr (json): a file containing the list of countries (in
             portuguese)
-    
+
     \b
     Outputs:
         loteca-to-betexp (pkl): a dict containing the mapping (Loteca string ->

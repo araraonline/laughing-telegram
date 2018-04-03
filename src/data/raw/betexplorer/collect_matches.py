@@ -1,17 +1,17 @@
 import logging
 import sqlite3
-import sys
 
 import click
 import click_log
 import parsel
 
-sys.path.append('../../../..')
+import import_magic
 from src.data.raw.util import requests_retry_session
 
 
 logger = logging.getLogger()
 click_log.basic_config(logger)
+
 
 def create_table(cursor):
     cursor.execute("""
@@ -34,6 +34,7 @@ def create_table(cursor):
             FOREIGN KEY(league_category, league_name, league_year) REFERENCES leagues(category, name, year)
         );""")
 
+
 def save_matches(cursor, response, category, name, year):
     selector = parsel.Selector(response.text)
 
@@ -42,7 +43,7 @@ def save_matches(cursor, response, category, name, year):
         if row.css('th'): continue  # it is a header
 
         url = row.css('td:nth-of-type(1) a::attr(href)').extract_first()
-        teams = row.css('td:nth-of-type(1) span ::text').extract()    
+        teams = row.css('td:nth-of-type(1) span ::text').extract()
         score = row.css('td:nth-of-type(2) a::text').extract_first() or ''
         scoremod = row.css('td:nth-of-type(2) a span::text').extract_first() or ''
         date = row.css('td:nth-of-type(6)::text').extract_first()
@@ -54,20 +55,21 @@ def save_matches(cursor, response, category, name, year):
             INTO matches (id, url, league_category, league_name, league_year, teamH, teamA, date, score, scoremod)
             VALUES (?,?,?,?,?,?,?,?,?,?)""", [id, url, category, name, year, teams[0], teams[1], date, score, scoremod])
 
+
 def retrieve_other_urls(response, base_url):
     """Some leagues are composed of more than one pages.
     If this is the case, this function will return the urls
     to all the pages in tghe league that are not the current.
-    
+
     You can scrape all those links later!
     """
-    selector = parsel.Selector(text=response.text)      
+    selector = parsel.Selector(text=response.text)
     urls = selector.css('.list-tabs--secondary a.list-tabs__item__in:not(.current)::attr(href)').extract()
     urls = set(urls)
     urls = urls - set(['javascript:void(0);'])
     urls = sorted(urls)
     urls = [base_url + url for url in urls]
-    
+
     return urls
 
 
@@ -78,6 +80,7 @@ def check_complete(url):
     response = session.get(url)
     return 'No upcoming matches to be played.' in response.text
 
+
 def save_all_matches(category, name, year, base_url, cursor):
     session = requests_retry_session(total=10, backoff_factor=0.3)
     url = base_url + 'results/'
@@ -87,7 +90,7 @@ def save_all_matches(category, name, year, base_url, cursor):
     for url in retrieve_other_urls(response, url):
         response = session.get(url)
         save_matches(cursor, response, category, name, year)
-    
+
 
 # CLI
 
@@ -97,7 +100,7 @@ def collect_matches():
     # connect to database
     conn = sqlite3.connect('db.sqlite3')
     cursor = conn.cursor()
-    
+
     # create table
     create_table(cursor)
 
