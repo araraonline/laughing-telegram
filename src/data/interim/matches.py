@@ -345,21 +345,22 @@ def generate_whole_matches_dict(loteca_df, betexp_df, teamsd, logger=logger):
 
     # if we try only 1 team alike we get loads of bad results
 
-    #### MAKE ITERATIONS (for games that didn't happen)
-    logger.info("Discover matches that didn't happen - 1 iteration")
-    df1 = loteca0
-    df2 = betexp[betexp.scoremod.isin(['ABN.', 'AWA.', 'CAN.', 'INT.', 'POSTP.', 'WO.'])]
-    results, newteams = generate_matches_dict(df1, df2, teamsd, logger=logger,
-                                              ignore_date=True,
-                                              ignore_score=True,
-                                              min_team_rigid_points=2,
-                                              min_team_flex_points=2,
-                                              return_teams=True)
-    for k, v in newteams.items(): teamsd[k] |= v
-    ret.update(results)
-
-    #### REMOVE BAD RESULTS
-    del ret[10219]
+    # #### MAKE ITERATIONS (for games that didn't happen)
+    # # From now on we are ignoring matches that didn't happen
+    # # Ignoring the date AND the score is one of the best recipes
+    # # For false positives
+    #
+    # logger.info("Discover matches that didn't happen - 1 iteration")
+    # df1 = loteca0
+    # df2 = betexp[betexp.scoremod.isin(['ABN.', 'AWA.', 'CAN.', 'INT.', 'POSTP.', 'WO.'])]
+    # results, newteams = generate_matches_dict(df1, df2, teamsd, logger=logger,
+    #                                           ignore_date=True,
+    #                                           ignore_score=True,
+    #                                           min_team_rigid_points=2,
+    #                                           min_team_flex_points=2,
+    #                                           return_teams=True)
+    # for k, v in newteams.items(): teamsd[k] |= v
+    # ret.update(results)
 
     return ret
 
