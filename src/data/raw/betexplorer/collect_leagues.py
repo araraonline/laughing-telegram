@@ -1,41 +1,100 @@
 import re
 import sqlite3
+from collections import namedtuple
 from urllib.parse import urlparse
 
 import click
-import parsel
+from parsel import Selector
 
-import pathmagic
 from src.data.raw.util import requests_retry_session
 
 
-def create_table(cursor):
+League = namedtuple('League', 'category, name, year, url')
+
+
+def create_table(conn):
+    """Create the leagues table
+    """
+    cursor = conn.cursor()
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS leagues (
-            category text NOT NULL,
-            name text NOT NULL,
-            year text NOT NULL,
-            url text NOT NULL,
-            scraped INTEGER,
-            complete INTEGER,
-            PRIMARY KEY(category, name, year)
-            );""")
+        CREATE TABLE IF NOT EXISTS betexp_leagues (
+          category  TEXT     NOT NULL,
+          name      TEXT     NOT NULL,
+          year      TEXT     NOT NULL,
+          url       TEXT     NOT NULL,
+          scraped   INTEGER  NOT NULL DEFAULT 0,
+          finished  INTEGER  ,
+
+          PRIMARY KEY(category, name, year)
+        )""")
+    cursor.close()
+    conn.commit()
 
 
-def save_league(cursor, category, name, year, url):
-    url = process_url(url, year)
-    if not url:
-        return
+def scrap_leagues(category):
+    """Scrap leagues from a given category
+    """
+    session = requests_retry_session(total=10, backoff_factor=0.3)
 
-    cursor.execute("""
-        INSERT OR IGNORE
-        INTO leagues (category, name, year, url, scraped, complete)
-        VALUES (?,?,?,?,?,?);""", [category, name, year, url, False, None])
+    url = 'http://www.betexplorer.com/soccer/{}/'.format(category)
+    click.echo('Retrieving leagues from {}'.format(url))
+
+    response = session.get(url)
+    selector = Selector(response.text)
+
+    leagues = []
+    _table = selector.css('tbody')
+    for _yearly_list in _table:
+        year = _yearly_list.css('th::text').extract_first()
+        for _anchor in _yearly_list.css('a'):
+            name = _anchor.css('::text').extract_first()
+            url = _anchor.css('::attr(href)').extract_first()
+            url = prepare_league_url(url, year)
+            if url:
+                leagues.append(League(category, name, year, url))
+
+    return leagues
 
 
-def process_url(league_url, year):
-    url = league_url
+def save_leagues(conn, leagues):
+    """Save leagues to the database
 
+    This will execute a transaction.
+    """
+    cursor = conn.cursor()
+    for league in leagues:
+        l = league
+        cursor.execute("""
+            INSERT OR IGNORE INTO betexp_leagues (
+              category,
+              name,
+              year,
+              url
+            )
+            VALUES (?, ?, ?, ?)
+            """, [l.category, l.name, l.year, l.url])
+    cursor.close()
+    conn.commit()
+
+
+def prepare_league_url(url, year):
+    """Prepares a league URL for saving
+
+    Steps:
+    - Convert relative URL into absolute URL
+
+    - Add year to the end of the URL
+
+      For example, http://www.betexplorer.com/soccer/brazil/serie-a/ can become
+      http://www.betexplorer.com/soccer/brazil/serie-a-2018/.
+
+      The second URL does not vary with the time.
+
+    - Any URLs with queries halt the process and return None.
+
+      This behaviour happens because we want to avoid URLs with queries (they
+      are duplicates).
+    """
     # prepend URL
     if not url.startswith('http'):
         url = 'http://www.betexplorer.com' + url
@@ -55,39 +114,34 @@ def process_url(league_url, year):
 
 @click.command()
 @click.argument('category')
-@click.option('--start-year', type=click.INT)
-def scrap_leagues(category, start_year):
-    category = '-'.join(category.lower().split())
-    start_year = (start_year or 0)
+@click.argument('start-year', type=click.INT)
+@click.argument('out-db', type=click.Path())
+def CLI(category, start_year, out_db):
+    """Extracts leagues from the league pages (see example at [1])
 
-    url = 'http://www.betexplorer.com/soccer/{}/'.format(category)
+    \b
+    Arguments:
+        category (str): The category to extract leagues from. Must be all
+            lowercase and dash splitted (for example, 'south-america').
+        start-year (int): Only leagues that happened at or after said year will
+            be recorded.
 
-    # connect to database
-    conn = sqlite3.connect('db.sqlite3')
-    cursor = conn.cursor()
+    \b
+    Outputs:
+        db (sqlite3): A database object to save the leagues to.
 
-    # create table
-    create_table(cursor)
+    \b
+    [1]: http://www.betexplorer.com/soccer/brazil/
+    """
+    conn = sqlite3.connect(out_db)
 
-    # retrieve and save leagues
-    session = requests_retry_session(total=10, backoff_factor=0.3)
-    response = session.get(url)
-    selector = parsel.Selector(response.text)
+    create_table(conn)
+    leagues = scrap_leagues(category)
+    leagues = [l for l in leagues if start_year <= int(l.year[-4:])]
+    save_leagues(conn, leagues)
 
-    for yearly_list in selector.css('tbody'):
-        year = yearly_list.css('th::text').extract_first()
-        if int(year[-4:]) < start_year:
-            continue
-
-        for anchor in yearly_list.css('a'):
-            name = anchor.css('::text').extract_first()
-            url = anchor.css('::attr(href)').extract_first()
-            save_league(cursor, category, name, year, url)
-
-    # commit changes
-    conn.commit()
     conn.close()
 
 
 if __name__ == '__main__':
-    scrap_leagues()
+    CLI()

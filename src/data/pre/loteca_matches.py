@@ -25,24 +25,24 @@ def extract_matches(rounds):
     df = pd.DataFrame({
         'roundno': [m['concurso'] for m in matches],
         'gameno': [m['icJogo'] for m in matches],
-        'teamH': [m['noTime1'] for m in matches],
-        'teamA': [m['noTime2'] for m in matches],
-        'goalsH': [m['qt_gol_time1'] for m in matches],
-        'goalsA': [m['qt_gol_time2'] for m in matches],
+        'team_h': [m['noTime1'] for m in matches],
+        'team_a': [m['noTime2'] for m in matches],
+        'goals_h': [m['qt_gol_time1'] for m in matches],
+        'goals_a': [m['qt_gol_time2'] for m in matches],
         'date': [m['dt_jogo'] for m in matches]
     })
 
     # set columns type
     df['date'] = pd.to_datetime(df.date, unit='ms').dt.normalize()
     df['gameno'] = df.gameno.apply(int)
-    df['goalsH'] = df.goalsH.apply(int)
-    df['goalsA'] = df.goalsA.apply(int)
+    df['goals_h'] = df.goals_h.apply(int)
+    df['goals_a'] = df.goals_a.apply(int)
 
     # create 'happened' column
     df['happened'] = df.date.notnull()
 
     # order columns
-    df = df[['roundno', 'gameno', 'date', 'teamH', 'goalsH', 'teamA', 'goalsA', 'happened']]
+    df = df[['roundno', 'gameno', 'date', 'team_h', 'goals_h', 'team_a', 'goals_a', 'happened']]
 
     # fix wrong dates
     old_dates = df.loc[df.roundno == 548, 'date']

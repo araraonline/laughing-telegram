@@ -50,7 +50,7 @@ def generate_name_to_strings(df):
     """
     dict = defaultdict(list)
 
-    strings = set(df.teamH) | set(df.teamA)
+    strings = set(df.team_h) | set(df.team_a)
     for string in strings:
         name, tokens = extract_tokens(string)
         dict[name].append(string)
@@ -68,7 +68,7 @@ def guess_state(betexplorer_name, brazilian_df, name_to_strings):
     Args:
         betexplorer_name: the raw BetExplorer team name (without tokens)
         brazilian_df: a DataFrame containing all the brazilian matches with the
-            following columns: 'teamH', 'teamA' and 'league_name'
+            following columns: 'team_h', 'team_a' and 'league_name'
         name_to_strings: a dict (BetExplorer name -> list of BetExplorer strings
             that generate that name) for the brazilian teams
 
@@ -81,7 +81,7 @@ def guess_state(betexplorer_name, brazilian_df, name_to_strings):
     leagues = set()
     strings = name_to_strings[betexplorer_name]
     for string in strings:
-        sleagues = set(df[(df.teamH == string) | (df.teamA == string)].league_name)
+        sleagues = set(df[(df.team_h == string) | (df.team_a == string)].league_name)
         leagues |= sleagues
 
     states = set([LEAGUE_DICT[league] for league in leagues if league in LEAGUE_DICT])
@@ -209,8 +209,8 @@ def retrieve_teams(in_betexp_db):
     conn = sqlite3.connect(in_betexp_db)
 
     # international teams
-    df = pd.read_sql_query("SELECT teamH, teamA FROM matches WHERE league_category != 'brazil'", conn)
-    strings = set(df.teamH) | set(df.teamA)
+    df = pd.read_sql_query("SELECT team_h, team_a FROM betexp_matches WHERE league_category != 'brazil'", conn)
+    strings = set(df.team_h) | set(df.team_a)
     strings = sorted(strings)
 
     for string in strings:
@@ -220,9 +220,9 @@ def retrieve_teams(in_betexp_db):
         teams.append(team)
 
     # brazilian teams
-    df = pd.read_sql_query("SELECT teamH, teamA, league_name FROM matches WHERE league_category == 'brazil'", conn)
+    df = pd.read_sql_query("SELECT team_h, team_a, league_name FROM betexp_matches WHERE league_category == 'brazil'", conn)
     name_to_strings = generate_name_to_strings(df)
-    strings = set(df.teamH) | set(df.teamA)
+    strings = set(df.team_h) | set(df.team_a)
     strings = sorted(strings)
 
     for string in strings:

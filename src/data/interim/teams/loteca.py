@@ -117,7 +117,7 @@ def retrieve_teams(in_loteca_matches, start_round=366):
     matches = pd.read_pickle(in_loteca_matches)
     matches = matches[matches.roundno >= start_round]
 
-    strings = set(matches.teamH) | set(matches.teamA)
+    strings = set(matches.team_h) | set(matches.team_a)
     strings = sorted(strings)
 
     teams = []

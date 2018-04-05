@@ -149,12 +149,12 @@ def generate_matches_dict(loteca_df, betexp_df, teamsd,
 
         if min_team_rigid_points == 1:
             # at least one team must be in the teamd values
-            betexp_df = betexp_df[betexp_df.teamH.isin(rigid_teams) |
-                                  betexp_df.teamA.isin(rigid_teams)]
+            betexp_df = betexp_df[betexp_df.team_h.isin(rigid_teams) |
+                                  betexp_df.team_a.isin(rigid_teams)]
         else:
             # both teams must be in the teamd values
-            betexp_df = betexp_df[betexp_df.teamH.isin(rigid_teams) &
-                                  betexp_df.teamA.isin(rigid_teams)]
+            betexp_df = betexp_df[betexp_df.team_h.isin(rigid_teams) &
+                                  betexp_df.team_a.isin(rigid_teams)]
 
     # cache DataFrames of retricted dates (to speed up)
     if not ignore_date:
@@ -181,23 +181,23 @@ def generate_matches_dict(loteca_df, betexp_df, teamsd,
 
         # filter score
         if not ignore_score:
-            choices = choices[(choices.goalsH == row.goalsH) &
-                              (choices.goalsA == row.goalsA)]
+            choices = choices[(choices.goals_h == row.goals_h) &
+                              (choices.goals_a == row.goals_a)]
 
         # filter teams
         tokeep = []  # list of rows indexes to keep
         for choices_index, choices_row in choices.iterrows():
             # get points for home team
-            rigidH = compare_teams_rigid(loteca_row.teamH, choices_row.teamH, teamsd)
-            flexH = True if rigidH else compare_teams_flex(loteca_row.teamH, choices_row.teamH)
+            rigid_h = compare_teams_rigid(loteca_row.team_h, choices_row.team_h, teamsd)
+            flex_h = True if rigid_h else compare_teams_flex(loteca_row.team_h, choices_row.team_h)
 
             # get points for away team
-            rigidA = compare_teams_rigid(loteca_row.teamA, choices_row.teamA, teamsd)
-            flexA = True if rigidA else compare_teams_flex(loteca_row.teamA, choices_row.teamA)
+            rigid_a = compare_teams_rigid(loteca_row.team_a, choices_row.team_a, teamsd)
+            flex_a = True if rigid_a else compare_teams_flex(loteca_row.team_a, choices_row.team_a)
 
             # sum points
-            rigid_points = rigidH + rigidA
-            flex_points = flexH + flexA
+            rigid_points = rigid_h + rigid_a
+            flex_points = flex_h + flex_a
 
             # save
             if rigid_points >= min_team_rigid_points and \
@@ -214,10 +214,10 @@ def generate_matches_dict(loteca_df, betexp_df, teamsd,
             betexp_id = choices.id.iloc[0]
             ret[loteca_id] = betexp_id
 
-            if choices.teamH.iloc[0] not in teamsd[row.teamH]:
-                newteams[row.teamH].add(choices.teamH.iloc[0])
-            if choices.teamA.iloc[0] not in teamsd[row.teamA]:
-                newteams[row.teamA].add(choices.teamA.iloc[0])
+            if choices.team_h.iloc[0] not in teamsd[row.team_h]:
+                newteams[row.team_h].add(choices.team_h.iloc[0])
+            if choices.team_a.iloc[0] not in teamsd[row.team_a]:
+                newteams[row.team_a].add(choices.team_a.iloc[0])
 
             logger.debug("#%s -> %s" % (loteca_id, betexp_id))
             continue
@@ -424,14 +424,14 @@ def save_whole_matches_dict(in_loteca_matches, in_betexp_db, in_teams_dict,
 
     # load betexplorer
     conn = sqlite3.connect(in_betexp_db)
-    betexp = pd.read_sql_query('SELECT id, league_category, date, teamH, teamA, score, scoremod FROM matches', conn)
+    betexp = pd.read_sql_query('SELECT id, league_category, date, team_h, team_a, score, scoremod FROM betexp_matches', conn)
     conn.close()
 
     # preprocess betexplorer
     betexp.date = pd.to_datetime(betexp.date, dayfirst=True)
     betexp.score = betexp.score.str.strip()
-    betexp['goalsH'] = [int(score.split(':')[0]) if score else np.nan for score in betexp.score]
-    betexp['goalsA'] = [int(score.split(':')[1]) if score else np.nan for score in betexp.score]
+    betexp['goals_h'] = [int(score.split(':')[0]) if score else np.nan for score in betexp.score]
+    betexp['goals_a'] = [int(score.split(':')[1]) if score else np.nan for score in betexp.score]
 
     # load teams dict
     with open(in_teams_dict, mode='rb') as fp:
