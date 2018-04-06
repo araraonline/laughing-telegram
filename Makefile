@@ -99,11 +99,12 @@ data/interim/betexp_matchlist.pkl: src/misc/extract_dict_values.py \
 
 
 ### Collect BetExplorer odds
-data/raw/betexp_odds.sqlite3: src/data/raw/betexplorer/collect_odds.py \
-							   data/interim/betexp_matchlist.pkl \
-							   data/flags/betexp_matches
+data/flags/betexp_odds: src/data/raw/betexplorer/collect_odds.py \
+						 data/flags/betexp_matches \
+						 data/interim/betexp_matchlist.pkl
 	@echo Collect BetExplorer odds
-	@python -m src.data.raw.betexplorer.collect_odds $(word 2,$^) $(word 3,$^) $@
+	@python -m src.data.raw.betexplorer.collect_odds $(word 3,$^) $(betexp_db)
+	@touch $@
 
 
 # Loteca to BetExplorer {{{1
