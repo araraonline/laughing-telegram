@@ -149,6 +149,12 @@ src/data/interim/ltb_matches.py: \
 	src/data/interim/teams/betexplorer.py \
 	src/data/interim/teams/loteca.py
 
+### Create list of matches found
+data/interim/loteca_matchlist.pkl: src/misc/extract_dict_keys.py \
+									data/interim/ltb_matches.pkl
+	@echo Create list of matches found
+	@python -m src.misc.extract_dict_keys $(word 2,$^) $@
+
 
 # Updates {{{1
 
