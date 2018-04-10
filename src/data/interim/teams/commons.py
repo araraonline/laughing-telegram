@@ -1,24 +1,44 @@
-from collections import namedtuple
+class Team(object):
+    """A Team object
 
+    Represents a team either from loteca or from BetExplorer.
+    """
+    def __init__(self, string, name, fname, 
+                 am_flag=False, women_flag=False,
+                 country=None, state=None, under=None):
+        assert isinstance(string, str)
+        assert isinstance(name, str)
+        assert isinstance(fname, str)
 
-Team = namedtuple('Team', 'fname, name, string, tokens')
+        assert isinstance(am_flag, bool)
+        assert isinstance(women_flag, bool)
 
+        if country is not None:
+            assert isinstance(country, str)
+            assert len(country) == 3
+            country = country.upper()
 
-class Tokens(namedtuple('Tokens', 'state, country, am, under, women')):
-    def __init__(self, *args, **kwargs):
-        self.check_values()
+        if state is not None:
+            assert isinstance(state, str)
+            assert len(state) == 2
+            state = state.upper()
 
-    def check_values(self):
-        if self.state is not None:
-            assert self.state.islower()
-            assert len(self.state) == 2
+        if under is not None:
+            assert isinstance(under, int)
+            assert 0 <= under <= 25
 
-        if self.country is not None:
-            assert self.country.islower()
-            assert len(self.country) == 3
+        # set values
+        self.string = string
+        self.name = name
+        self.fname = fname
+        self.am_flag = am_flag
+        self.women_flag = women_flag
+        self.country = country
+        self.state = state
+        self.under = under
 
-        assert isinstance(self.am, bool)
-        assert isinstance(self.women, bool)
+    def __str__(self):
+        return self.string
 
-        assert isinstance(self.under, int)
-        assert 0 <= self.under <= 25
+    def __repr__(self):
+        return 'Team ("{}")'.format(self.string)
