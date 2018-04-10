@@ -1,84 +1,72 @@
 import re
 
-import pandas as pd
 from unidecode import unidecode
 
-from src.data.interim.teams.commons import Team, Tokens
-from src.data.interim.teams.util import re_strip
+from src.data.interim.teams.commons import Team
+from src.util import load_pickle, re_strip
 
 
 REPLACEMENTS = {
-                'sao jose (pa' :            'sao jose',
-                       'a b c' :                 'abc',
-           'atalanta bergamas' :            'atalanta',
-                 'boa esporte' :   'boa esporte clube',
-                'cfz brasilia' :                 'cfz',
+                'sao jose (pa' : 'sao jose',
+                       'a b c' : 'abc',
+           'atalanta bergamas' : 'atalanta',
+                 'boa esporte' : 'boa esporte clube',
+                'cfz brasilia' : 'cfz',
            'deporti la coruna' : 'deportivo la coruna',
-               'e c democrata' :           'democrata',
-    'fluminense feira santana' :          'fluminense',
-                   'ji-parana' :           'ji parana',
-               'p.  desportos' :          'portuguesa',
-                 's. bernardo' :        'sao bernardo',
-                    's. paulo' :           'sao paulo',
-                     's.bento' :           'sao bento',
-                'uniao s.joao' :      'uniao sao joao',
-                       'vasco' :       'vasco da gama',
-          'xv nov. piracicaba' :       'xv piracicaba',
+               'e c democrata' : 'democrata',
+    'fluminense feira santana' : 'fluminense',
+                   'ji-parana' : 'ji parana',
+               'p.  desportos' : 'portuguesa',
+                 's. bernardo' : 'sao bernardo',
+                    's. paulo' : 'sao paulo',
+                     's.bento' : 'sao bento',
+                'uniao s.joao' : 'uniao sao joao',
+                       'vasco' : 'vasco da gama',
+          'xv nov. piracicaba' : 'xv piracicaba',
 }
 
 
-def extract_tokens(loteca_string):
-    """Extracts the tokens from a loteca string
+def parse_string(loteca_string):
+    """Parse a loteca string, extracting its token info
 
-    Args:
-        loteca_string: the raw loteca string whose tokens will be extracted
-
-    Returns:
-        A tuple (loteca_name, tokens) that contains the raw team name (without
-        the tokens) and an object of type Tokens.
-
-        The Tokens itself contain the following variables:
-            state: 2 letter state or None
-            country: 3 letter country or None
-            am: always False for loteca
-            under: 20 if 'sub20' or 0
-            women: True or False
+    See the return statement for the result.
     """
     str = loteca_string
 
-    # tokens
+    # simple tokens
+
+    # re.subn will substitute the string and also return the
+    # number of substitutions made (we are using it as a
+    # flag)
     str, u20 = re.subn(r'\bSUB[ \-]?20\b', '', str, flags=re.I)
     str, junior = re.subn(r'\bJ[ÚU]NIOR\b', '', str, flags=re.I)
     str, women = re.subn(r'^F\b', '', str, flags=re.I)
+    under = 20 if (u20 or junior) else None
+    women_flag = women > 0
+
     str = re_strip(str)
 
-    # name, country and state
+    # complex tokens (state, country and name)
     if '/' in str:
         name, other = str.rsplit('/', 1)
         name = re_strip(name)
         other = re_strip(other)
+
         if len(other) == 2:
             country = None
-            state = other.lower()
+            state = other.upper()
         elif len(other) == 3:
-            country = other.lower()
+            country = other.upper()
             state = None
         else:
-            raise ValueError("Could not extract tokens for %s" % str)
+            raise ValueError("Bad loteca string: {}".format(str))
     else:
         name = str
         country = None
         state = None
 
-    # normalize types
-    am = False
-    under = 20 if u20 or junior else 0
-    women = bool(women)
-
-    # create tokens object
-    tokens = Tokens(state, country, am, under, women)
-
-    return name, tokens
+    # return a tuple
+    return name, under, women_flag, state, country
 
 
 def format_name(loteca_name):
@@ -89,42 +77,33 @@ def format_name(loteca_name):
     name = unidecode(name)
     name = name.lower()
     name = re_strip(name)
+
+    # we make some replacements just to standardize some
+    # names that are present in multiple forms
     name = REPLACEMENTS.get(name, name)
 
     return name
 
 
-def retrieve_teams(in_loteca_matches, start_round=366):
-    """Retrieve a list o loteca teams
-
-    This will only open the loteca matches file and extract/process the teams
-    from it.
+def retrieve_teams(in_loteca_matches):
+    """Load teams from loteca
 
     Args:
-        in_loteca_matches: a pkl file that contains loteca matches in a
-            DataFrame
-        start_round: first round to retrieve matches from
+        - in_loteca_matches: Location of a .pkl file that contains the
+              processed loteca matches.
 
     Returns:
-        A list of 'Team' objects. Each team object contains the following info:
-
-        fname: standardized name of the team (used when comparing from
-            different sources)
-        name: raw name of the team (without tokens)
-        string: raw name of the team (with tokens)
-        tokens: a Tokens object
+        A list of Team objects (`commons`).
     """
-    matches = pd.read_pickle(in_loteca_matches)
-    matches = matches[matches.roundno >= start_round]
-
+    matches = load_pickle(in_loteca_matches)
     strings = set(matches.team_h) | set(matches.team_a)
-    strings = sorted(strings)
 
     teams = []
     for string in strings:
-        name, tokens = extract_tokens(string)
+        name, under, women_flag, state, country = parse_string(string)
         fname = format_name(name)
-        team = Team(fname, name, string, tokens)
+        team = Team(string, name, fname, women_flag=women_flag,
+                    country=country, state=state, under=under)
         teams.append(team)
 
     return teams
