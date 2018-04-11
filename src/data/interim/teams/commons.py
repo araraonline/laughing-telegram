@@ -42,16 +42,3 @@ class Team(object):
 
     def __repr__(self):
         return 'Team ("{}")'.format(self.string)
-
-    @classmethod
-    def from_another(cls, team, **kwargs):
-        return cls(
-            kwargs.get('string', team.string),
-            kwargs.get('name', team.name),
-            kwargs.get('fname', team.fname),
-            am_flag    = kwargs.get('am_flag', team.am_flag),
-            women_flag = kwargs.get('women_flag', team.women_flag),
-            country    = kwargs.get('country', team.country),
-            state      = kwargs.get('state', team.state),
-            under      = kwargs.get('under', team.under),
-        )
