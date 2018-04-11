@@ -180,7 +180,7 @@ def retrieve_teams(in_betexp_db):
         in_betexp_db: The SQLite file where the BetExplorer matches are saved.
 
     Returns:
-        A list of Team objects (commons).
+        A list of Team objects (commons). Teams are unique.
     """
     conn = sqlite3.connect(in_betexp_db)
     out_teams = retrieve_out_teams(conn)
@@ -205,8 +205,6 @@ def generate_string(team, use_country=False):
     Note:
         The "(Am)" token is ignored.
     """
-    raise NotImplementedError  # check the use of this function
-
     str = team.name
 
     if team.under:

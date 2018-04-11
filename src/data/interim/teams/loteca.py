@@ -93,7 +93,7 @@ def retrieve_teams(in_loteca_matches):
               processed loteca matches.
 
     Returns:
-        A list of Team objects (`commons`).
+        A list of Team objects (`commons`). Teams are unique.
     """
     matches = load_pickle(in_loteca_matches)
     strings = set(matches.team_h) | set(matches.team_a)
