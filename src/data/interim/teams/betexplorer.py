@@ -192,26 +192,12 @@ def retrieve_teams(in_betexp_db):
 
 def generate_string(team, use_country=False):
     """Generates a new BetExplorer team string
-
-    Args:
-        team: A Team object (commons). Its name must correspond to the desired
-            BetExplorer name.
-        use_country: Whether the country abbreviation must appear in the
-            generated string.
-
-    Returns:
-        A BetExplorer string like it should be found in the database.
-
-    Note:
-        The "(Am)" token is ignored.
     """
-    str = team.name
-
+    s = team.name
     if team.under:
-        str += ' U%s' % team.under
+        s += ' U%s' % team.under
     if team.women_flag:
-        str += ' W'
+        s += ' W'
     if use_country and team.country:
-        str += ' (%s)' % team.country.capitalize()
-
-    return str
+        s += ' (%s)' % team.country.capitalize()
+    return s

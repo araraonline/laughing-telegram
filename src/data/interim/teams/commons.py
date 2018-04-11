@@ -1,3 +1,8 @@
+import re
+
+from src.util import re_strip
+
+
 class Team(object):
     """A Team object
 
@@ -36,6 +41,24 @@ class Team(object):
         self.country = country
         self.state = state
         self.under = under
+
+        # cache placeholder
+        self._fname_without_state = None
+
+    @property
+    def fname_without_state(self):
+        if self.state is None:
+            return self.fname
+
+        if self._fname_without_state is None:
+            pattern = r'\b{}\b'
+            pattern = pattern.format(re.escape(self.state))
+            fname_without_state = re.sub(pattern, '', self.fname)
+            fname_without_state = re_strip(fname_without_state)
+            self._fname_without_state = fname_without_state
+            return fname_without_state
+
+        return self._fname_without_state
 
     def __str__(self):
         return self.string

@@ -91,13 +91,6 @@ data/flags/betexp_matches: src/data/raw/betexplorer/collect_matches.py \
 	@python -m src.data.raw.betexplorer.collect_matches $(betexp_db)
 	@touch $@
 
-### Create list of matches to be scraped
-data/interim/betexp_matchlist.pkl: src/misc/extract_dict_values.py \
-									data/interim/ltb_matches.pkl
-	@echo Create list of matches to be scraped
-	@python -m src.misc.extract_dict_values $(word 2,$^) $@
-
-
 ### Collect BetExplorer odds
 data/flags/betexp_odds: src/data/raw/betexplorer/collect_odds.py \
 						 data/flags/betexp_matches \
@@ -115,26 +108,25 @@ data/external/countries_pt.json data/external/countries_en.json:
 	@wget -nv -O "data/external/countries_pt_BR.json" "https://raw.githubusercontent.com/umpirsky/country-list/master/data/pt_BR/country.json"
 	@wget -nv -O "data/external/countries_en.json" "https://raw.githubusercontent.com/umpirsky/country-list/master/data/en/country.json"
 
-### Generate Loteca to BetExplorer teams dictionary
-data/interim/ltb_teams.pkl: src/data/interim/teams/loteca_to_betexp.py \
-							 data/process/loteca_matches.pkl \
-							 data/flags/betexp_matches \
+### Link country lists
+data/interim/countries.pkl: src/misc/json_to_pickle.py \
+							src/misc/link_dictionaries.py \
 							 data/external/countries_en.json \
 							 data/external/countries_pt_BR.json
-	@echo Generate Loteca to BetExplorer teams dictionary
-	@python -m src.data.interim.teams.loteca_to_betexp $(betexp_db) $(word 2,$^) $(word 4,$^) $(word 5,$^) $@
+	@echo Link country lists
+	@python -m src.misc.json_to_pickle $(word 3,$^) data/interim/countries_en.pkl
+	@python -m src.misc.json_to_pickle $(word 4,$^) data/interim/countries_pt_BR.pkl
+	@python -m src.misc.link_dictionaries data/interim/countries_pt_BR.pkl data/interim/countries_en.pkl $@
+	@rm data/interim/countries_en.pkl
+	@rm data/interim/countries_pt_BR.pkl
 
-src/data/interim/teams/betexplorer.py: \
-	src/data/interim/teams/commons.py \
-	src/data/interim/teams/util.py
-src/data/interim/teams/loteca.py: \
-	src/data/interim/teams/commons.py \
-	src/data/interim/teams/util.py
-src/data/interim/teams/loteca_to_betexp.py: \
-	src/data/interim/teams/betexplorer.py \
-	src/data/interim/teams/country.py \
-	src/data/interim/teams/loteca.py \
-	src/data/interim/teams/util.py
+### Generate Loteca to BetExplorer teams dictionary
+data/interim/ltb_teams.pkl: src/data/interim/ltb_teams.py \
+							 data/flags/betexp_matches \
+							 data/process/loteca_matches.pkl \
+							 data/interim/countries.pkl
+	@echo Generate Loteca to BetExplorer teams dictionary
+	@python -m src.data.interim.ltb_teams $(betexp_db) $(word 3,$^) $(word 4,$^) $@
 
 ### Generate Loteca to BetExplorer matches dictionary:
 data/interim/ltb_matches.pkl: src/data/interim/ltb_matches.py \
@@ -150,6 +142,11 @@ src/data/interim/ltb_matches.py: \
 	src/data/interim/teams/loteca.py
 
 ### Create list of matches found
+data/interim/betexp_matchlist.pkl: src/misc/extract_dict_values.py \
+									data/interim/ltb_matches.pkl
+	@echo Create list of matches to be scraped
+	@python -m src.misc.extract_dict_values $(word 2,$^) $@
+
 data/interim/loteca_matchlist.pkl: src/misc/extract_dict_keys.py \
 									data/interim/ltb_matches.pkl
 	@echo Create list of matches found
