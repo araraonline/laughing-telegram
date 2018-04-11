@@ -74,6 +74,7 @@ dependencies:
   - pandocfilters=1.4.2=py36ha6701b7_1
   - parsel=1.2.0=py36_0
   - parso=0.1.1=py36h35f843b_0
+  - patsy=0.5.0=py36_0
   - pcre=8.41=hc27e229_1
   - pickleshare=0.7.4=py36h63277f8_0
   - pip=9.0.1=py36h6c6f9ce_4
@@ -96,11 +97,14 @@ dependencies:
   - qtconsole=4.3.1=py36h8f73b5b_0
   - readline=7.0=ha6073c6_4
   - requests=2.18.4=py36he2e5f8d_1
+  - scipy=1.0.0=py36hbf646e7_0
+  - seaborn=0.8.1=py36hfad7ec4_0
   - send2trash=1.4.2=py36_0
   - simplegeneric=0.8.1=py36_2
   - sip=4.18.1=py36h51ed4ed_2
   - six=1.11.0=py36h372c433_1
   - sqlite=3.22.0=h1bed415_0
+  - statsmodels=0.8.0=py36h8533d0b_0
   - terminado=0.8.1=py36_1
   - testpath=0.3.1=py36h8cadb63_0
   - tk=8.6.7=hc745277_3
