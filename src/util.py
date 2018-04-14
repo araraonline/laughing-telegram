@@ -23,6 +23,19 @@ def save_pickle(filepath, obj):
         pickle.dump(obj, f)
 
 
+def re_split(string):
+    """Split the string using a regular expression
+
+    Args:
+        string: The string to be splitted.
+
+    Returns:
+        A list of strings, containing words that were separated by non-word
+        characters.
+    """
+    return re.split(r'\W+', string)
+
+
 def re_strip(string):
     """Strips the string using regular expressions
 

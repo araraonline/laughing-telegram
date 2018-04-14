@@ -136,11 +136,6 @@ data/interim/ltb_matches.pkl: src/data/interim/ltb_matches.py \
 	@echo Generate Loteca to BetExplorer matches dictionary
 	@python -m src.data.interim.ltb_matches $(word 2,$^) $(betexp_db) $(word 4,$^) $@
 
-src/data/interim/ltb_matches.py: \
-	src/data/interim/teams/__init__.py \
-	src/data/interim/teams/betexplorer.py \
-	src/data/interim/teams/loteca.py
-
 ### Create list of matches found
 data/interim/betexp_matchlist.pkl: src/misc/extract_dict_values.py \
 									data/interim/ltb_matches.pkl

@@ -1,3 +1,4 @@
+from collections import defaultdict
 import logging
 
 import click
@@ -86,27 +87,26 @@ def generate_ltb_teams_dict(loteca_teams, betexp_teams, countries_dict):
 
     Read the CLI docstring for more information.
     """
-    LOTECA_MAX_SIZE = max(len(str(t)) for t in loteca_teams)
+    LOTECA_MAX_SIZE = max(len(t.fname) for t in loteca_teams)
 
-    ltb_dict = {}
+    # generate dict
+    ltb_dict = defaultdict(set)
     for loteca_team in loteca_teams:
-        # get matching BetExplorer strings
         matching_teams = [t
                           for t in betexp_teams
                           if is_same_team(loteca_team, t, countries_dict)]
-        betexp_strings = [betexplorer.generate_string(t) for t in matching_teams]
-        betexp_strings = set(betexp_strings)
+        betexp_fnames = set([t.fname for t in matching_teams])
+        ltb_dict[loteca_team.fname] |= betexp_fnames
 
-        # log founds
-        msg = "{loteca_string!s:>{loteca_max_size}} -> {found}"
-        msg = msg.format(loteca_string=loteca_team.string,
+    # log founds
+    logging.info("Found teams:")
+    for loteca_fname, betexp_fnames in sorted(ltb_dict.items()):
+        msg = "{loteca_fname!s:>{loteca_max_size}} -> {found}"
+        msg = msg.format(loteca_fname=loteca_fname,
                          loteca_max_size=LOTECA_MAX_SIZE,
-                         found=betexp_strings if betexp_strings else "{}")
-        log_level = logging.ERROR if len(betexp_strings) > 1 else logging.INFO
+                         found=betexp_fnames if betexp_fnames else "{}")
+        log_level = logging.WARNING if len(betexp_fnames) > 1 else logging.INFO
         logging.log(log_level, msg)
-
-        # save
-        ltb_dict[loteca_team.string] = betexp_strings
 
     return ltb_dict
 
