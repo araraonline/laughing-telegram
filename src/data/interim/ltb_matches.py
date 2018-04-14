@@ -147,8 +147,8 @@ def generate_ltb_matches_dict(loteca_matches, betexp_matches, teamsd):
         return be_team in teamsd[lt_team]
 
     def compare_teams_flex(team1, team2):
-        pieces1 = [p for p in re_split(team1) if len(p) > 2]
-        pieces2 = [p for p in re_split(team2) if len(p) > 2]
+        pieces1 = set([p for p in re_split(team1) if len(p) > 2])
+        pieces2 = set([p for p in re_split(team2) if len(p) > 2])
         return (pieces1 == pieces2 or
                   pieces1 < pieces2 or
                   pieces2 < pieces1)
