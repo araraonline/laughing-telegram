@@ -34,10 +34,14 @@ def identity(t1, t2):
 
 def is_same_match(lt_match, be_match,
                   teams_fn=identity,
-                  needed_teams=2):
+                  needed_teams=2,
+                  **kwargs):
     """Determine if two matches are the same
 
     We assume the date and score have already been checked.
+
+    **kwargs are here as a placeholder (we will pass date and score tolerance
+    into this function, for convenience).
     """
     lt = lt_match
     be = be_match
