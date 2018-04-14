@@ -1,6 +1,6 @@
 import logging
 import sqlite3
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from datetime import date, timedelta
 
 import click
@@ -33,34 +33,20 @@ def identity(t1, t2):
 
 
 def is_same_match(lt_match, be_match,
-                  date_tolerance=timedelta(),
-                  score_tolerance=0,
                   teams_fn=identity,
                   needed_teams=2):
     """Determine if two matches are the same
 
-    Order here is based on complexity. Simpler operations are put on top. This
-    might help performance.
+    We assume the date and score have already been checked.
     """
     lt = lt_match
     be = be_match
-
-    # score
-    score_diff = (abs(lt.score_h - be.score_h) +
-                    abs(lt.score_a - be.score_a))
-    if score_diff > score_tolerance:
-        return False
 
     # basic team
     if (lt.th_women_flag != be.th_women_flag or
           lt.ta_women_flag != be.ta_women_flag or
           lt.th_under != be.th_under or
           lt.ta_under != be.ta_under):
-        return False
-
-    # date
-    date_diff = abs(lt.date - be.date)
-    if date_diff > date_tolerance:
         return False
 
     # teams
@@ -72,6 +58,61 @@ def is_same_match(lt_match, be_match,
                 teams_fn(lt.ta_fname, be.ta_fname))
     else:
         return True
+
+
+def generate_reverse(matches):
+    """Generate a dictionary that maps scores/dates into matches
+
+    The resulting dictionary will be of the following form:
+        'scores':
+            (0,0): set(index of matches with (0,0) score)
+            (0,1): set(index of matches with (0,1) score)
+            ...
+        'dates':
+            date(2009-12-31): set(index of matches in the given date)
+            ...
+    """
+    dates = defaultdict(set)
+    scores = defaultdict(set)
+    for i, m in enumerate(matches):
+        dates[m.date].add(i)
+        scores[(m.score_h, m.score_a)].add(i)
+
+    return {'scores': scores, 'dates': dates}
+
+
+def filter_matches(loteca_match, betexp_matches, kwargs, reverse_dict):
+    """Filter BetExplorer matches
+
+    In the kwargs, we expect two arguments:
+
+        score_tolerance: Maximum difference in goals between 2 matches so that
+            they can be considered the same. Defaults to 0.
+
+        date_tolerance: Maximum difference in dates between 2 matches so that
+            they can be considered the same. Defaults to 0 (dates must be the
+            same).
+    """
+    score_indexes = set()
+    score_tolerance = kwargs.get('score_tolerance', 0)
+    for score, indexes in reverse_dict['scores'].items():
+        score_diff = (abs(loteca_match.score_h - score[0]) +
+                        abs(loteca_match.score_a - score[1]))
+        if score_diff <= score_tolerance:
+            score_indexes |= indexes
+
+    date_indexes = set()
+    date_tolerance = kwargs.get('date_tolerance', timedelta())
+    for date, indexes in reverse_dict['dates'].items():
+        date_diff = abs(loteca_match.date - date)
+        if date_diff <= date_tolerance:
+            date_indexes |= indexes
+
+    intersect_indexes = score_indexes & date_indexes
+    filtered = [m for i, m in enumerate(betexp_matches)
+                if i in intersect_indexes]
+
+    return filtered
 
 
 def generate_ltb_matches_dict(loteca_matches, betexp_matches, teamsd):
@@ -116,6 +157,8 @@ def generate_ltb_matches_dict(loteca_matches, betexp_matches, teamsd):
     LOTECA_MAX_MATCH = max(len(format_match(m)) for m in loteca_matches)
 
     # core
+    reverse_dict = generate_reverse(betexp_matches)
+
     param_set = [
         (
             'Link certain matches',
@@ -128,7 +171,9 @@ def generate_ltb_matches_dict(loteca_matches, betexp_matches, teamsd):
         logging.info(msg)
         for loteca_match in loteca_matches:
 
-            matching = [m for m in betexp_matches if is_same_match(loteca_match, m, **kwargs)]
+            filtered_matches = filter_matches(
+                    loteca_match, betexp_matches, kwargs, reverse_dict)
+            matching = [m for m in filtered_matches if is_same_match(loteca_match, m, **kwargs)]
             log_match(loteca_match, matching)
 
             # we only save results when there
