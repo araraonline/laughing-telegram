@@ -157,18 +157,37 @@ def generate_ltb_matches_dict(loteca_matches, betexp_matches, teamsd):
     LOTECA_MAX_MATCH = max(len(format_match(m)) for m in loteca_matches)
 
     # core
-    reverse_dict = generate_reverse(betexp_matches)
+    param1 = { 'teams_fn': compare_teams_rigid }
+    param2 = {
+        'teams_fn': compare_teams_rigid,
+        'needed_teams': 1
+    }
+    param3 = { 'teams_fn': compare_teams_flex }
+    param4 = {
+        'teams_fn': compare_teams_rigid,
+        'date_tolerance': timedelta(4),
+    }
+    param5 = {
+        'teams_fn': compare_teams_rigid,
+        'score_tolerance': 1
+    }
 
     param_set = [
-        (
-            'Link certain matches',
-             {'teams_fn': compare_teams_rigid}
-        ),
+        ('Link matches we are certain about', param1),
+        ('Link matches by one team', param2),
+        ('Link matches using flexible team names', param3),
+        ('Link matches with wrong dates', param4),
+        ('Link matches with wrong scores', param5),
     ]
 
     ltb_dict = {}
+    reverse_dict = generate_reverse(betexp_matches)
     for msg, kwargs in param_set:
+        left = len(loteca_matches)
+
         logging.info(msg)
+        logging.info("There are {} loteca matches left".format(left))
+
         for loteca_match in loteca_matches:
 
             filtered_matches = filter_matches(
