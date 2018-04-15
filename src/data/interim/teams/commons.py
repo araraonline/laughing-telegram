@@ -47,6 +47,8 @@ class Team(object):
 
     @property
     def fname_without_state(self):
+        """Try to remove state from fname
+        """
         if self.state is None:
             return self.fname
 
@@ -59,6 +61,15 @@ class Team(object):
             return fname_without_state
 
         return self._fname_without_state
+
+    @property
+    def fname_with_state(self):
+        """The fname appened with the state (in parenthesis)
+        """
+        if self.state is None:
+            return self.fname
+
+        return '{} ({})'.format(self.fname, self.state)
 
     def __str__(self):
         return self.string

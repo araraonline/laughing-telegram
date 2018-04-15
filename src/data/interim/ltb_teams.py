@@ -96,7 +96,7 @@ def generate_ltb_teams_dict(loteca_teams, betexp_teams, countries_dict):
                           for t in betexp_teams
                           if is_same_team(loteca_team, t, countries_dict)]
         betexp_fnames = set([t.fname for t in matching_teams])
-        ltb_dict[loteca_team.fname] |= betexp_fnames
+        ltb_dict[loteca_team.fname_with_state] |= betexp_fnames
 
     # log founds
     logging.info("Found teams:")
@@ -120,6 +120,30 @@ def CLI(in_betexp_db, in_loteca_matches, in_countries_dict, out_ltb_teams):
     """Creates a dictionary that maps loteca teams into betexplorer teams
 
     \b
+    Note:
+        There was some changes in what this script was actually outputting.
+        First, it mapped a loteca string into BetExplorer strings.
+
+    \b
+        This didn't serve well, because a string was too specific and we wanted
+        that, if, for example, the relationship ('BRASIL' -> 'Brazil') was
+        captured, this would also mean that ('BRASIL SUB20' -> 'Brazil U20') is
+        also captured.
+
+    \b
+        So we started using fnames instead. It looked good at first. Until the
+        moment the matches algorithm started getting confused about what team
+        is which. For example, 'atletico' would map both into 'atletico-mg' and
+        'atletico go'.
+
+    \b
+        As the answer by now, we choose to use the fname concateneted with the
+        team state (for example, 'atletico (mg)'). This will solve both the
+        specificity and the generality problem above (although not totally,
+        because the BetExplorer data contain some teams that share a common
+        name) (see 'Bragantino').
+
+    \b
     Inputs:
         betexp-db (sqlite3): The database containing BetExplorer matches.
         loteca-matches (pkl): A DatFrame containing processed loteca matches.
@@ -132,6 +156,9 @@ def CLI(in_betexp_db, in_loteca_matches, in_countries_dict, out_ltb_teams):
             set(BetExplorer team string)). The values of the dictionary are
             sets because we need to deal with cases where one loteca team maps
             to more than one BetExplorer teams.
+
+    \b
+            See note for more information on the dictionary keys.
     """
     click.echo("Preparing teams...")
     loteca_teams = loteca.retrieve_teams(in_loteca_matches)

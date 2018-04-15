@@ -228,11 +228,22 @@ def generate_ltb_matches_dict(loteca_matches, betexp_matches, teamsd):
 def get_loteca_match(row):
     """Generate a loteca Match from a row
     """
-    th_name, th_under, th_women_flag, _, _ = loteca.parse_string(row.team_h)
-    ta_name, ta_under, ta_women_flag, _, _ = loteca.parse_string(row.team_a)
-
+    # parse home team name
+    th_parsed = loteca.parse_string(row.team_h)
+    th_name, th_under, th_women_flag, th_state, _ = th_parsed
     th_fname = loteca.format_name(th_name)
+
+    # parse away team name
+    ta_parsed = loteca.parse_string(row.team_a)
+    ta_name, ta_under, ta_women_flag, ta_state, _ = ta_parsed
     ta_fname = loteca.format_name(ta_name)
+
+    # add states so our algorithm doesn't
+    # work with duplicates
+    if th_state is not None:
+        th_fname = '{} ({})'.format(th_fname, th_state)
+    if ta_state is not None:
+        ta_fname = '{} ({})'.format(ta_fname, ta_state)
 
     return Match(row.name,
                  row.date.to_pydatetime().date(),
