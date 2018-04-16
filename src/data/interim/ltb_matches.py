@@ -2,6 +2,7 @@ import logging
 import sqlite3
 from collections import defaultdict, namedtuple
 from datetime import date, timedelta
+from operator import itemgetter
 
 import click
 import pandas as pd
@@ -138,6 +139,11 @@ def generate_ltb_matches_dict(loteca_matches, betexp_matches, teamsd):
                          lt_max=LOTECA_MAX_TEAM)
         logging.info(msg)
 
+    def log_uncertain_team(team, teams):
+        msg = "{team:>30} -> {teams}"
+        msg = msg.format(team=team, teams=sorted(teams))
+        logging.info(msg)
+
     def log_match(lt_match, be_matches):
         msg = "MATCH {lt_match:>{lt_max_match}} -> {be_matches}"
         msg = msg.format(lt_match=format_match(lt_match),
@@ -145,6 +151,52 @@ def generate_ltb_matches_dict(loteca_matches, betexp_matches, teamsd):
                          lt_max_match=LOTECA_MAX_MATCH)
         log_level = logging.INFO if len(be_matches) <= 1 else logging.ERROR
         logging.log(log_level, msg)
+
+    def log_uncertain_match(match1, match2):
+        msg = "{match1:>{max_match}} -> {match2}"
+        msg = msg.format(match1=format_match(match1),
+                         match2=format_match(match2),
+                         max_match=LOTECA_MAX_MATCH)
+        logging.info(msg)
+
+    def log_uncertain():
+        """Log duplicate teams and the games they play
+
+        These duplicate teams are the ones we are uncertain about. For example,
+        one loteca team that maps into multiple BetExplorer teams. Or,
+        vice-versa.
+        """
+        # teams from loteca with multiple BetExplorer equivalents
+        uncertain_loteca = {k: v for k, v in teamsd.items() if len(v) > 1}
+
+        # teams from BetExplorer with multiple loteca equivalents
+        teamsd_reverse = defaultdict(set)
+        for k, v in teamsd.items():
+            for team in v:
+                teamsd_reverse[team].add(k)
+        uncertain_betexp = {k: v for k, v in teamsd_reverse.items()
+                            if len(v) > 1}
+
+        # matches from uncertain teams
+        uncertain_matches = {k: v for k, v in ltb_dict.items()
+                             if (k.th_fname in uncertain_loteca or
+                                 k.ta_fname in uncertain_loteca or
+                                 v.th_fname in uncertain_betexp or
+                                 v.ta_fname in uncertain_betexp)}
+
+        logging.info("Uncertain loteca teams:")
+        for team, teams in sorted(uncertain_loteca.items(), key=itemgetter(0)):
+            log_uncertain_team(team, teams)
+
+        logging.info("Uncertain BetExplorer teams:")
+        for team, teams in sorted(uncertain_betexp.items(), key=itemgetter(0)):
+            log_uncertain_team(team, teams)
+
+        logging.info("Matches from uncertain teams:")
+        for match1, match2 in sorted(
+                uncertain_matches.items(),
+                key=lambda x: (x[0].th_fname, x[0].date)):
+            log_uncertain_match(match1, match2)
 
     # fname comparison functions
     def compare_teams_rigid(lt_team, be_team):
@@ -157,6 +209,8 @@ def generate_ltb_matches_dict(loteca_matches, betexp_matches, teamsd):
                   pieces1 < pieces2 or
                   pieces2 < pieces1)
 
+    # save for later
+    LOTECA_MATCH_COUNT = len(loteca_matches)
     LOTECA_MAX_TEAM = max(len(n) for n in teamsd)
     LOTECA_MAX_MATCH = max(len(format_match(m)) for m in loteca_matches)
 
@@ -228,6 +282,12 @@ def generate_ltb_matches_dict(loteca_matches, betexp_matches, teamsd):
                     log_team(lt_ta, be_ta)
         else:
             loteca_matches = [m for m in loteca_matches if m not in ltb_dict]
+
+    # log results
+    log_uncertain()
+    msg = "Found {} out of {} matches"
+    msg = msg.format(len(ltb_dict), LOTECA_MATCH_COUNT)
+    logging.info(msg)
 
     # return a dictionary that maps id to id
     return {lm.id: bm.id for lm, bm in ltb_dict.items()}
@@ -356,7 +416,7 @@ def CLI(in_loteca_matches, in_betexp_db, in_ltb_teams, out_ltb_matches):
     """
     logging.getLogger().setLevel(logging.INFO)  # TODO
     logging.info("Loading data...")
-    loteca_matches = load_loteca_matches(in_loteca_matches)[:100]
+    loteca_matches = load_loteca_matches(in_loteca_matches)
     betexp_matches = load_betexp_matches(in_betexp_db)
     ltb_teams = load_pickle(in_ltb_teams)
 
