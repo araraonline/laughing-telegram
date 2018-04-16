@@ -162,26 +162,33 @@ def generate_ltb_matches_dict(loteca_matches, betexp_matches, teamsd):
 
     # core
     param1 = { 'teams_fn': compare_teams_rigid }
-    param2 = {
+    param2 = { 'teams_fn': compare_teams_flex }
+    param3 = {
         'teams_fn': compare_teams_rigid,
         'needed_teams': 1
     }
-    param3 = { 'teams_fn': compare_teams_flex }
     param4 = {
         'teams_fn': compare_teams_rigid,
-        'date_tolerance': timedelta(4),
+        'score_tolerance': 1
     }
     param5 = {
         'teams_fn': compare_teams_rigid,
-        'score_tolerance': 1
+        'date_tolerance': timedelta(1),
+    }
+    param6 = {
+        'teams_fn': compare_teams_rigid,
+        'date_tolerance': timedelta(5),
     }
 
     param_set = [
         ('Link matches we are certain about', param1),
-        ('Link matches by one team', param2),
-        ('Link matches using flexible team names', param3),
-        ('Link matches with wrong dates', param4),
-        ('Link matches with wrong scores', param5),
+        ('Link matches using flexible team names', param2),
+        ('Link matches by one team', param3),
+        ('Link matches by one team', param3),
+        ('Link matches by one team', param3),
+        ('Link matches with wrong scores', param4),
+        ('Link matches with wrong dates', param5),
+        ('Link matches with quite wrong dates', param6),
     ]
 
     ltb_dict = {}
