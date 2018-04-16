@@ -211,7 +211,7 @@ def generate_ltb_matches_dict(loteca_matches, betexp_matches, teamsd):
             if len(matching) == 1:
                 # update matches dict
                 betexp_match = matching.pop()
-                ltb_dict[loteca_match.id] = betexp_match.id
+                ltb_dict[loteca_match] = betexp_match
 
                 # update teams dict
                 lt_th = loteca_match.th_fname
@@ -227,9 +227,10 @@ def generate_ltb_matches_dict(loteca_matches, betexp_matches, teamsd):
                     teamsd[lt_ta].add(be_ta)
                     log_team(lt_ta, be_ta)
         else:
-            loteca_matches = [m for m in loteca_matches if m.id not in ltb_dict]
+            loteca_matches = [m for m in loteca_matches if m not in ltb_dict]
 
-    return ltb_dict
+    # return a dictionary that maps id to id
+    return {lm.id: bm.id for lm, bm in ltb_dict.items()}
 
 
 def get_loteca_match(row):
@@ -355,7 +356,7 @@ def CLI(in_loteca_matches, in_betexp_db, in_ltb_teams, out_ltb_matches):
     """
     logging.getLogger().setLevel(logging.INFO)  # TODO
     logging.info("Loading data...")
-    loteca_matches = load_loteca_matches(in_loteca_matches)
+    loteca_matches = load_loteca_matches(in_loteca_matches)[:100]
     betexp_matches = load_betexp_matches(in_betexp_db)
     ltb_teams = load_pickle(in_ltb_teams)
 
