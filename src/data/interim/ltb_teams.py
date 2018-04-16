@@ -10,6 +10,8 @@ from src.util import load_pickle, save_pickle
 
 def standardize_country(name):
     """Standardize country name
+
+    For the function below.
     """
     return unidecode(name).lower()
 
@@ -54,6 +56,8 @@ def generate_countries_dict(in_countries_dict):
 
 def is_same_team(loteca_team, betexp_team, countries_dict):
     """Check if two teams are the same
+
+    Teams here are an instance of `teams.commons.Team`.
     """
     lt = loteca_team
     be = betexp_team
@@ -127,20 +131,21 @@ def CLI(in_betexp_db, in_loteca_matches, in_countries_dict, out_ltb_teams):
         This didn't serve well, because a string was too specific and we wanted
         that, if, for example, the relationship ('BRASIL' -> 'Brazil') was
         captured, this would also mean that ('BRASIL SUB20' -> 'Brazil U20') is
-        also captured.
+        captured.
 
     \b
-        So we started using fnames instead. It looked good at first. Until the
-        moment the matches algorithm started getting confused about what team
-        is which. For example, 'atletico' would map both into 'atletico-mg' and
-        'atletico go'.
+        So we started mapping fnames into fnames instead. It looked good at
+        first. Until the moment the matches algorithm started getting confused
+        about which team is which. For example, 'atletico' would map both into
+        'atletico-mg' and 'atletico go'. Fnames were too general for the Loteca
+        matches.
 
     \b
-        As the answer by now, we choose to use the fname concateneted with the
-        team state (for example, 'atletico (mg)'). This will solve both the
-        specificity and the generality problem above (although not totally,
-        because the BetExplorer data contain some teams that share a common
-        name) (see 'Bragantino').
+        So, we choose to represent the loteca teams with the fname concatenated
+        with the team state (for example, 'atletico (MG)'), and, to represent
+        the BetExplorer taems with the fname directly (this was already
+        specific enough for BetExplorer). Both problems above were solved,
+        except for few specific teams, but these will be logged.
 
     \b
     Inputs:
