@@ -89,6 +89,8 @@ def generate_reverse(matches):
 def filter_matches(loteca_match, betexp_matches, kwargs, reverse_dict):
     """Filter BetExplorer matches
 
+    This will reduce the search area for each match in the algorithm.
+
     In the kwargs, we expect two arguments:
 
         score_tolerance: Maximum difference in goals between 2 matches so that
@@ -209,7 +211,7 @@ def generate_ltb_matches_dict(loteca_matches, betexp_matches, teamsd):
                   pieces1 < pieces2 or
                   pieces2 < pieces1)
 
-    # save for later
+    # constants
     LOTECA_MATCH_COUNT = len(loteca_matches)
     LOTECA_MAX_TEAM = max(len(n) for n in teamsd)
     LOTECA_MAX_MATCH = max(len(format_match(m)) for m in loteca_matches)
@@ -245,6 +247,8 @@ def generate_ltb_matches_dict(loteca_matches, betexp_matches, teamsd):
         ('Link matches with quite wrong dates', param6),
     ]
 
+    # generate loteca to BetExplorer dict
+    # the dict maps Matches into Matches
     ltb_dict = {}
     reverse_dict = generate_reverse(betexp_matches)
     for msg, kwargs in param_set:
@@ -282,9 +286,9 @@ def generate_ltb_matches_dict(loteca_matches, betexp_matches, teamsd):
                     log_team(lt_ta, be_ta)
         else:
             loteca_matches = [m for m in loteca_matches if m not in ltb_dict]
+    log_uncertain()
 
     # log results
-    log_uncertain()
     msg = "Found {} out of {} matches"
     msg = msg.format(len(ltb_dict), LOTECA_MATCH_COUNT)
     logging.info(msg)

@@ -11,7 +11,6 @@ from src.util import load_pickle, save_pickle
 def standardize_country(name):
     """Standardize country name
     """
-    from unidecode import unidecode
     return unidecode(name).lower()
 
 
