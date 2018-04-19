@@ -14,6 +14,11 @@ clean:
 	rm -f data/process/*
 	rm -f data/raw/*
 
+.PHONY: clean-odds
+clean-odds: src/misc/drop_tables.py
+	@python -m src.misc.drop_tables betexp_odds betexp_match_checklist $(main_db)
+	@rm -f data/flags/betexp_odds
+
 .PHONY: clean-cache
 clean-cache:
 	find -type f -name '*.pyc' -exec rm -r {} \;
