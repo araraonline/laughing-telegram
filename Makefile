@@ -2,8 +2,9 @@
 
 main_db = 'data/db.sqlite3'
 
-dummy:
-	# this will do nothing
+main:  data/interim/loteca_matchlist.pkl \
+	   data/flags/betexp_odds
+	# the point we are at
 
 .PHONY: clean
 clean:
@@ -136,7 +137,7 @@ data/interim/ltb_matches.pkl: src/data/interim/ltb_matches.py \
 	@echo Generate Loteca to BetExplorer matches dictionary
 	@python -m src.data.interim.ltb_matches $(word 2,$^) $(betexp_db) $(word 4,$^) $@
 
-### Create list of matches found
+### Create lists of matches found
 data/interim/betexp_matchlist.pkl: src/misc/extract_dict_values.py \
 									data/interim/ltb_matches.pkl
 	@echo Create list of matches to be scraped
