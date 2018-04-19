@@ -441,7 +441,7 @@ def load_betexp_matches(in_betexp_db):
     # create Match objects
     matches = []
     for idd, date, score, h_name, a_name in zip(
-            df.index, dates, scores, h_names, a_names):
+            df.id, dates, scores, h_names, a_names):
         if score:
             match = Match(
                 idd,
